@@ -6,7 +6,7 @@ dependency for credential storage.
 
 import hmac
 import secrets
-from hashlib import scrypt
+from hashlib import scrypt, sha256
 
 _SCRYPT_N = 2**14
 _SCRYPT_R = 8
@@ -48,6 +48,11 @@ def verify_password(password: str, hashed: str) -> bool:
     return hmac.compare_digest(candidate.hex(), digest_hex)
 
 
-def new_api_token() -> str:
-    """Return a URL-safe token suitable for API keys and session secrets."""
+def new_session_token() -> str:
+    """Return a URL-safe bearer token for a login session."""
     return secrets.token_urlsafe(32)
+
+
+def hash_session_token(token: str) -> str:
+    """Hash a session token so the database never holds a usable cookie."""
+    return sha256(token.encode()).hexdigest()

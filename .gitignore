@@ -28,6 +28,11 @@ frontend/dist/
 # Generated API client (orval)
 frontend/src/client/generated/
 
+# Local database
+backend/data/
+*.db
+*.sqlite3
+
 # Editors and OS
 .vscode/
 .idea/
