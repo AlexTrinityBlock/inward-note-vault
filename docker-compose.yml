@@ -21,9 +21,10 @@ services:
       - vault-data:/data
     restart: unless-stopped
     healthcheck:
+      # The uv image has no `python` on PATH; the project venv does.
       test:
         - CMD
-        - python
+        - .venv/bin/python
         - -c
         - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()
       interval: 30s
