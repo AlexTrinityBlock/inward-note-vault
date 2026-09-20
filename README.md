@@ -1,46 +1,61 @@
 # inward-note-vault
 
-Personal note vault service — an inward-facing place to capture, classify and retrieve notes.
+Capture notes, then let TypeSafe System One models turn them into typed,
+reusable judgments the app can filter, rank and act on.
 
-> Status: early skeleton (v0.1.0). The repository currently contains the project scaffolding only.
+> Status: v0.1.0 skeleton. The service boundaries and toolchain are in place;
+> features land on `develop`.
 
-## Tech stack
+## Stack
 
-- **Python 3.14**, packaged and managed with [uv](https://docs.astral.sh/uv/)
-- **typesafe-sdk** for structured LLM classification of note content
-- Planned: FastAPI backend (`backend/`) and a Vite + React frontend (`frontend/`)
+| Part | Technology |
+| --- | --- |
+| Backend | Python 3.14, FastAPI, SQLAlchemy, Alembic, [uv](https://docs.astral.sh/uv/) |
+| Frontend | React, TypeScript, Vite, [Bun](https://bun.sh), [Orval](https://orval.dev) |
+| AI | [TypeSafe](https://docs.typesafe.ai) System One models (Jev) via `typesafe-sdk` |
+| Database | PostgreSQL 17 |
+
+## Layout
+
+```
+├── backend/          # FastAPI service (app/, alembic/, pyproject.toml)
+├── frontend/         # React + TypeScript client (src/, vite.config.ts)
+├── .dsh/skills/      # project skills, including TypeSafe judgment guidance
+├── docker-compose.yml
+└── private-docs/     # local notes, never committed
+```
 
 ## Getting started
 
+Everything at once, with PostgreSQL:
+
 ```bash
-# install dependencies
-uv sync
-
-# run the entry point
-uv run main.py
+docker compose up
+# API      http://127.0.0.1:8000  (docs at /docs)
+# frontend http://127.0.0.1:5173
 ```
 
-## Configuration
+Or run each side directly:
 
-Local secrets live in `.env` (ignored by git). Copy the keys you need and fill in your own values:
-
+```bash
+cd backend  && uv sync && uv run fastapi dev app/main.py
+cd frontend && bun install && bun run dev
 ```
-TYPESAFE_API_KEY=...
-```
 
-## Repository layout
+Either way, copy `.env` values for local secrets; the TypeSafe API key
+(`TYPESAFE_API_KEY`) is read by the backend only and never reaches the browser.
 
-| Path             | Purpose                                            |
-| ---------------- | -------------------------------------------------- |
-| `main.py`        | Python entry point                                 |
-| `pyproject.toml` | Project metadata and dependencies                  |
-| `private-docs/`  | Local notes, never committed (see `.gitignore`)    |
-| `backend/`       | FastAPI service (planned)                          |
-| `frontend/`      | Vite + React client (planned)                      |
+## TypeSafe
+
+The backend owns every model call: it sends note state plus typed questions, and
+stores or serves the judgments. Judgment design follows the TypeSafe skill in
+`.dsh/skills/typesafe-ai`, and <https://docs.typesafe.ai> is the source of truth
+for current API details.
 
 ## Versioning
 
-Development happens on `develop`; `master` tracks released history. Releases are tagged `vX.Y.Z`.
+Development happens on `develop`; `master` tracks released history. Releases are
+tagged `vX.Y.Z` — see [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

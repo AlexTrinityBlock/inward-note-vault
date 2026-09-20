@@ -1,0 +1,29 @@
+[project]
+name = "inward-note-vault-backend"
+version = "0.1.0"
+description = "Inward Note Vault API: capture, classify and retrieve personal notes."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.20.0",
+    "fastapi>=0.141.1",
+    "psycopg[binary]>=3.3.6",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy>=2.0.54",
+    "typesafe-sdk>=0.7.0",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+]
