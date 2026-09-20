@@ -1,0 +1,5 @@
+# Line endings, so the launchers work wherever they are checked out.
+# Everything else keeps the platform default.
+*.sh  text eol=lf
+*.ps1 text eol=lf
+*.bat text eol=crlf
