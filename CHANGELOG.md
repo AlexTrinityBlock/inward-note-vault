@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A locked encrypted notebook now shows nothing but the unlock prompt: the
   folders, the tag panel, the note list and the editor are not rendered, and the
   notes are not even requested from the server until the browser holds the key.
+- Which notebook is open now lives in the URL (`/?notebook=encrypted`) instead
+  of component state, so a refresh stays in the encrypted notebook and lands on
+  the unlock page — the key itself is still memory-only. The view is
+  bookmarkable, and switching tabs replaces the history entry rather than
+  stacking one.
 - Long notes are no longer truncated: the text is cut into consecutive windows
   of 10,000 characters (`INWARD_CLASSIFY_WINDOW_CHARS`), each window is
   classified, and the answers are averaged — tags average their probabilities,

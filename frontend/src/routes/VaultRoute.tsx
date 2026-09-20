@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
   useCreateFolder,
@@ -40,7 +41,21 @@ export function VaultRoute() {
   const foldersQuery = useListFolders();
   const tagsQuery = useListTags();
 
-  const [tab, setTab] = useState<Notebook>("plain");
+  // Which notebook is open lives in the URL, not in component state: a refresh
+  // then lands on the same notebook — showing the unlock prompt for the
+  // encrypted one, since the key only ever lives in memory — and the view is
+  // bookmarkable. Switching tabs replaces the entry instead of stacking one.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: Notebook = searchParams.get("notebook") === "encrypted" ? "encrypted" : "plain";
+  const selectTab = useCallback(
+    (next: Notebook) => {
+      setSearchParams(next === "encrypted" ? { notebook: "encrypted" } : {}, { replace: true });
+      setSelectedId(null);
+      setClassifyId(null);
+    },
+    [setSearchParams],
+  );
+
   const [folderId, setFolderId] = useState<number | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -190,22 +205,14 @@ export function VaultRoute() {
         <button
           type="button"
           className={tab === "plain" ? "active" : ""}
-          onClick={() => {
-            setTab("plain");
-            setSelectedId(null);
-            setClassifyId(null);
-          }}
+          onClick={() => selectTab("plain")}
         >
           {t("notes.plainNotebook")}
         </button>
         <button
           type="button"
           className={tab === "encrypted" ? "active" : ""}
-          onClick={() => {
-            setTab("encrypted");
-            setSelectedId(null);
-            setClassifyId(null);
-          }}
+          onClick={() => selectTab("encrypted")}
         >
           🔒 {t("notes.encryptedNotebook")}
         </button>
