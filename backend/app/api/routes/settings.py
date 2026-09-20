@@ -46,13 +46,13 @@ def _read(session: SessionDep) -> SettingsRead:
     )
 
 
-@router.get("")
+@router.get("", operation_id="getSettings")
 def read_settings(session: SessionDep, _user: CurrentUser) -> SettingsRead:
     """Read the stored settings."""
     return _read(session)
 
 
-@router.patch("")
+@router.patch("", operation_id="updateSettings")
 def update_settings(
     payload: SettingsUpdate, session: SessionDep, _user: CurrentUser
 ) -> SettingsRead:
@@ -78,7 +78,7 @@ def update_settings(
     return _read(session)
 
 
-@router.post("/typesafe/verify")
+@router.post("/typesafe/verify", operation_id="verifyTypesafeKey")
 async def verify_typesafe(
     session: SessionDep, client: TypeSafeDep, _user: CurrentUser
 ) -> TypeSafeCheck:

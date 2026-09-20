@@ -25,6 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before any decrypted text reaches TypeSafe.
 - A 33-case pytest suite covering auth, notes, folders, tags, crypto
   parameters, classification, and SPA hosting.
+- The React client: first-run wizard and sign-in, folder tree, note list, and a
+  split Markdown editor with a live sanitized preview.
+- Browser-side notebook crypto (PBKDF2-SHA256 → AES-GCM) with the key held in
+  tab memory only, a create/unlock dialog, and a lock action.
+- Classification UI: suggestions with probabilities, apply-or-dismiss, an
+  auto-classify setting for new notes, and a consent step before an encrypted
+  note's text is sent to Jev.
+- UI locales for English, Traditional Chinese and Simplified Chinese, plus
+  `bun test` coverage for the crypto, folder tree and dictionary parity.
+- Orval-generated, committed API client built from the backend's `operation_id`s.
 
 ### Changed
 

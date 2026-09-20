@@ -7,7 +7,6 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import api_router, health
 from app.core.config import Settings, get_settings
@@ -67,32 +66,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 def _mount_spa(app: FastAPI, directory: Path) -> None:
-    """Serve the built single-page app, when it exists.
+    """Serve the built single-page app.
 
-    Registered last so that API and documentation routes always win.
+    Registered last so that API and documentation routes always win. The build
+    output is checked per request, so building the client after the API started
+    still works without a restart.
     """
-    index = directory / "index.html"
-    if not index.is_file():
-
-        @app.get("/", include_in_schema=False)
-        def not_built() -> HTMLResponse:
-            return HTMLResponse(_NOT_BUILT, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
-
-        return
-
     resolved = directory.resolve()
-    assets = directory / "assets"
-    if assets.is_dir():
-        app.mount("/assets", StaticFiles(directory=assets), name="assets")
+    index = resolved / "index.html"
 
-    @app.get("/{path:path}", include_in_schema=False)
-    def spa(path: str) -> FileResponse:
+    @app.get("/{path:path}", include_in_schema=False, response_model=None)
+    def spa(path: str) -> FileResponse | HTMLResponse:
         if path.startswith(("api/", "docs", "openapi.json", "redoc")):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
         candidate = (resolved / path).resolve()
         if path and candidate.is_file() and candidate.is_relative_to(resolved):
             return FileResponse(candidate)
+
+        if not index.is_file():
+            return HTMLResponse(_NOT_BUILT, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+
         return FileResponse(index)
 
 

@@ -25,9 +25,6 @@ node_modules/
 frontend/dist/
 *.tsbuildinfo
 
-# Generated API client (orval)
-frontend/src/client/generated/
-
 # Local database
 backend/data/
 *.db

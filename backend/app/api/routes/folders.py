@@ -51,7 +51,7 @@ def _read(session: SessionDep, folder_id: int) -> FolderRead:
     )
 
 
-@router.get("")
+@router.get("", operation_id="listFolders")
 def list_folders(session: SessionDep, _user: CurrentUser) -> list[FolderRead]:
     """List every folder, flat, with its path."""
     paths = crud.folder_paths(session)
@@ -63,7 +63,7 @@ def list_folders(session: SessionDep, _user: CurrentUser) -> list[FolderRead]:
     ]
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, operation_id="createFolder")
 def create_folder(payload: FolderCreate, session: SessionDep, _user: CurrentUser) -> FolderRead:
     """Create a folder, optionally inside another one."""
     if payload.parent_id is not None and crud.get_folder(session, payload.parent_id) is None:
@@ -73,13 +73,13 @@ def create_folder(payload: FolderCreate, session: SessionDep, _user: CurrentUser
     return _read(session, folder.id)
 
 
-@router.get("/{folder_id}")
+@router.get("/{folder_id}", operation_id="getFolder")
 def get_folder(folder_id: int, session: SessionDep, _user: CurrentUser) -> FolderRead:
     """Fetch a single folder."""
     return _read(session, folder_id)
 
 
-@router.patch("/{folder_id}")
+@router.patch("/{folder_id}", operation_id="updateFolder")
 def update_folder(
     folder_id: int, payload: FolderUpdate, session: SessionDep, _user: CurrentUser
 ) -> FolderRead:
@@ -109,7 +109,7 @@ def update_folder(
     return _read(session, folder.id)
 
 
-@router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT, operation_id="deleteFolder")
 def delete_folder(folder_id: int, session: SessionDep, _user: CurrentUser) -> None:
     """Delete a folder; its notes and subfolders move up to its parent."""
     folder = crud.get_folder(session, folder_id)

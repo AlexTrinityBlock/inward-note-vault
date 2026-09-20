@@ -37,13 +37,13 @@ def _read_all(session: SessionDep) -> list[TagRead]:
     ]
 
 
-@router.get("")
+@router.get("", operation_id="listTags")
 def list_tags(session: SessionDep, _user: CurrentUser) -> list[TagRead]:
     """List every tag with its usage count."""
     return _read_all(session)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, operation_id="createTag")
 def create_tag(payload: TagCreate, session: SessionDep, _user: CurrentUser) -> TagRead:
     """Create a tag, if the name is new."""
     name = payload.name.strip()
@@ -54,7 +54,7 @@ def create_tag(payload: TagCreate, session: SessionDep, _user: CurrentUser) -> T
     return TagRead(id=tag.id, name=tag.name, note_count=0)
 
 
-@router.patch("/{tag_id}")
+@router.patch("/{tag_id}", operation_id="renameTag")
 def rename_tag(
     tag_id: int, payload: TagUpdate, session: SessionDep, _user: CurrentUser
 ) -> list[TagRead]:
@@ -66,7 +66,7 @@ def rename_tag(
     return _read_all(session)
 
 
-@router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT, operation_id="deleteTag")
 def delete_tag(tag_id: int, session: SessionDep, _user: CurrentUser) -> None:
     """Delete a tag and remove it from every note."""
     tag = crud.get_tag(session, tag_id)

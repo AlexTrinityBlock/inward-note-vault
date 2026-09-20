@@ -37,13 +37,13 @@ class Account(BaseModel):
     username: str
 
 
-@router.get("/setup/status")
+@router.get("/setup/status", operation_id="getSetupStatus")
 def setup_status(session: SessionDep) -> SetupStatus:
     """Report whether the first-run wizard is needed."""
     return SetupStatus(needs_setup=crud.count_users(session) == 0)
 
 
-@router.post("/setup", status_code=status.HTTP_201_CREATED)
+@router.post("/setup", status_code=status.HTTP_201_CREATED, operation_id="createSetup")
 def setup(payload: SetupRequest, session: SessionDep, settings: SettingsDep) -> Account:
     """Create the owner account. Only possible while the vault is empty."""
     if crud.count_users(session) > 0:
@@ -65,7 +65,7 @@ def setup(payload: SetupRequest, session: SessionDep, settings: SettingsDep) -> 
     return Account(username=user.username)
 
 
-@router.post("/auth/login")
+@router.post("/auth/login", operation_id="login")
 def login(
     payload: Credentials, response: Response, session: SessionDep, settings: SettingsDep
 ) -> Account:
@@ -90,7 +90,7 @@ def login(
     return Account(username=user.username)
 
 
-@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT, operation_id="logout")
 def logout(
     request: Request, response: Response, session: SessionDep, settings: SettingsDep
 ) -> None:
@@ -99,7 +99,7 @@ def logout(
     response.delete_cookie(key=settings.cookie_name, path="/")
 
 
-@router.get("/auth/me")
+@router.get("/auth/me", operation_id="getCurrentAccount")
 def me(user: CurrentUser) -> Account:
     """The signed-in account."""
     return Account(username=user.username)

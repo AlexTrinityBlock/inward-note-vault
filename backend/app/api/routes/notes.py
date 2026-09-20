@@ -157,7 +157,7 @@ def _require_folder(session: SessionDep, folder_id: int | None) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
 
 
-@router.get("")
+@router.get("", operation_id="listNotes")
 def list_notes(
     session: SessionDep,
     _user: CurrentUser,
@@ -184,7 +184,7 @@ def list_notes(
     return [_read(note) for note in notes]
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, operation_id="createNote")
 def create_note(payload: NoteCreate, session: SessionDep, _user: CurrentUser) -> NoteRead:
     """Create a note in either notebook."""
     _validate_payload(
@@ -210,7 +210,7 @@ def create_note(payload: NoteCreate, session: SessionDep, _user: CurrentUser) ->
     return _read(note)
 
 
-@router.get("/{note_id}")
+@router.get("/{note_id}", operation_id="getNote")
 def get_note(note_id: int, session: SessionDep, _user: CurrentUser) -> NoteRead:
     """Fetch a single note."""
     note = crud.get_note(session, note_id)
@@ -219,7 +219,7 @@ def get_note(note_id: int, session: SessionDep, _user: CurrentUser) -> NoteRead:
     return _read(note)
 
 
-@router.patch("/{note_id}")
+@router.patch("/{note_id}", operation_id="updateNote")
 def update_note(
     note_id: int, payload: NoteUpdate, session: SessionDep, _user: CurrentUser
 ) -> NoteRead:
@@ -256,7 +256,7 @@ def update_note(
     return _read(note)
 
 
-@router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT, operation_id="deleteNote")
 def delete_note(note_id: int, session: SessionDep, _user: CurrentUser) -> None:
     """Delete a note."""
     note = crud.get_note(session, note_id)
@@ -265,7 +265,7 @@ def delete_note(note_id: int, session: SessionDep, _user: CurrentUser) -> None:
     crud.delete_note(session, note)
 
 
-@router.post("/{note_id}/classify")
+@router.post("/{note_id}/classify", operation_id="classifyNote")
 async def classify(
     note_id: int,
     payload: ClassifyRequest,

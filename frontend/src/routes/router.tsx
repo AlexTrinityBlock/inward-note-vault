@@ -1,12 +1,16 @@
 import { createBrowserRouter } from "react-router-dom";
 
-import { Layout } from "../components/Layout";
-import { HomeRoute } from "./HomeRoute";
+import { AppGate } from "../components/AppGate";
+import { SettingsRoute } from "./SettingsRoute";
+import { VaultRoute } from "./VaultRoute";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
-    children: [{ index: true, element: <HomeRoute /> }],
+    element: <AppGate />,
+    children: [
+      { index: true, element: <VaultRoute /> },
+      { path: "settings", element: <SettingsRoute /> },
+    ],
   },
 ]);

@@ -80,7 +80,7 @@ class CryptoProfileCreate(BaseModel):
         return value
 
 
-@router.get("/profile")
+@router.get("/profile", operation_id="getCryptoProfile")
 def read_profile(session: SessionDep, _user: CurrentUser) -> CryptoProfileRead:
     """Read the encrypted notebook's key-derivation parameters."""
     profile = crud.get_crypto_profile(session)
@@ -96,7 +96,7 @@ def read_profile(session: SessionDep, _user: CurrentUser) -> CryptoProfileRead:
     )
 
 
-@router.post("/profile", status_code=status.HTTP_201_CREATED)
+@router.post("/profile", status_code=status.HTTP_201_CREATED, operation_id="createCryptoProfile")
 def create_profile(
     payload: CryptoProfileCreate, session: SessionDep, _user: CurrentUser
 ) -> CryptoProfileRead:
