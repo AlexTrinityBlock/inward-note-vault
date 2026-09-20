@@ -21,7 +21,8 @@ def main() -> None:
     parser.add_argument("--reload", action="store_true", help="restart on code changes")
     args = parser.parse_args()
 
-    print(f"Inward Note Vault — database: {settings.sqlite_path}")
+    # Plain ASCII: non-UTF-8 Windows consoles turn punctuation into mojibake.
+    print(f"Inward Note Vault | database: {settings.sqlite_path}")
     print(f"Open http://{args.host}:{args.port} once the server is up.")
 
     if args.reload:

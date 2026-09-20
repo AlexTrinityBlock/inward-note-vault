@@ -54,6 +54,25 @@ The first visit leads through setup: create the account, and optionally paste a
 TypeSafe API key. The database file is created at `backend/data/vault.db` and
 migrations run at start-up.
 
+### Launchers
+
+The bare-metal steps above are wrapped in one script per platform. Each checks
+for `uv`, builds the client with Bun only when `frontend/dist` is missing, syncs
+the backend, and serves — passing arguments through, so `--port` and `--reload`
+still work.
+
+| Platform | Run |
+| --- | --- |
+| Windows (PowerShell) | `./start.ps1` |
+| Windows (double-click or cmd) | `start.bat` |
+| macOS / Linux | `./start.sh` |
+
+```bash
+./start.ps1 --port 9000        # or: ./start.sh --port 9000 --reload
+```
+
+They do not install `uv` or `bun`; if one is missing they say so and exit.
+
 ## How the two notebooks differ
 
 | | Plain | Encrypted |
@@ -76,6 +95,7 @@ in SQLite and never returned by the API.
 ├── backend/            # FastAPI + SQLAlchemy + Alembic, SQLite storage
 ├── frontend/           # React + TypeScript, Vite, Bun, Orval-generated client
 ├── .dsh/skills/        # project skills, including TypeSafe judgment guidance
+├── start.ps1           # one-step launcher (also start.sh, start.bat)
 ├── docker-compose.yml  # single container, SQLite on a volume
 ├── Dockerfile          # builds the client, then serves it from the API
 └── private-docs/       # local notes, never committed

@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Root launchers for the bare-metal path: `start.ps1`, `start.bat` (a shim onto
+  the PowerShell script, so it can be double-clicked) and `start.sh`. Each
+  checks for `uv`, builds the client with Bun only when `frontend/dist` is
+  missing, syncs the backend, and forwards `--port`/`--reload` to the server.
 - A per-account classification quota (10 requests per minute by default,
   `INWARD_CLASSIFY_REQUESTS_PER_MINUTE`) so a client bug cannot spend without
   bound; exceeding it returns 429.
