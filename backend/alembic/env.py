@@ -39,6 +39,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         render_item=render_item,
+        render_as_batch=True,
     )
 
     with context.begin_transaction():
@@ -55,7 +56,12 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata, render_item=render_item
+            connection=connection,
+            target_metadata=target_metadata,
+            render_item=render_item,
+            # SQLite cannot ALTER COLUMN, so autogenerate must produce
+            # table-rebuilding migrations rather than bare alter statements.
+            render_as_batch=True,
         )
 
         with context.begin_transaction():
