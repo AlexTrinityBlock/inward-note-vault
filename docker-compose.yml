@@ -1,49 +1,35 @@
+# One container, one SQLite file on a named volume.
+#
+#   docker compose up --build      ->  http://127.0.0.1:8000
+#
+# For hot-reloading development servers instead, use docker-compose.dev.yml.
+
 name: inward-note-vault
 
 services:
-  db:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_USER: vault
-      POSTGRES_PASSWORD: vault
-      POSTGRES_DB: vault
-    ports:
-      - "5432:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vault -d vault"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  backend:
-    image: ghcr.io/astral-sh/uv:bookworm-slim
-    working_dir: /app
-    command: sh -c "uv sync && uv run fastapi dev app/main.py --host 0.0.0.0 --port 8000"
-    environment:
-      DATABASE_URL: postgresql+psycopg://vault:vault@db:5432/vault
-      TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+  app:
+    build:
+      context: .
+    image: inward-note-vault:local
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-    depends_on:
-      db:
-        condition: service_healthy
-
-  frontend:
-    image: oven/bun:1-alpine
-    working_dir: /app
-    command: sh -c "bun install && bun run dev --host 0.0.0.0 --port 5173"
     environment:
-      VITE_API_PROXY_TARGET: http://backend:8000
-    ports:
-      - "5173:5173"
+      INWARD_DATA_DIR: /data
+      # Optional: also settable in the UI on first run, and stored in SQLite.
+      TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
     volumes:
-      - ./frontend:/app
-    depends_on:
-      - backend
+      - vault-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
-  db-data:
+  vault-data:

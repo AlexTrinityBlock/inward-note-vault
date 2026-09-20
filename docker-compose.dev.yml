@@ -1,0 +1,42 @@
+# Development servers with hot reload:
+#
+#   docker compose -f docker-compose.dev.yml up
+#   API      http://127.0.0.1:8000   (reloads on backend edits)
+#   frontend http://127.0.0.1:5173   (proxies /api to the API container)
+#
+# The SQLite file lives on the `dev-data` volume, so it survives restarts.
+
+name: inward-note-vault-dev
+
+services:
+  backend:
+    image: ghcr.io/astral-sh/uv:bookworm-slim
+    working_dir: /app/backend
+    command: sh -c "uv sync && uv run inward-note-vault --reload --host 0.0.0.0 --port 8000"
+    environment:
+      INWARD_DATA_DIR: /data
+      INWARD_STATIC_DIR: /app/frontend/dist
+      INWARD_CORS_ORIGINS: '["http://localhost:5173"]'
+      TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend/dist:/app/frontend/dist
+      - dev-data:/data
+
+  frontend:
+    image: oven/bun:1-alpine
+    working_dir: /app
+    command: sh -c "bun install && bun run dev --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+
+volumes:
+  dev-data:
