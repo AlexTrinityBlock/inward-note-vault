@@ -188,6 +188,17 @@ export function ClassifyPanel({
             )}
           </div>
 
+          <p className="muted small">
+            {result.samples > 1
+              ? `${t("classify.sampled")} ${result.samples} × ${Math.round(
+                  result.characters / result.samples,
+                )} ${t("classify.characters")}`
+              : null}
+            {result.samples_failed > 0
+              ? ` ${result.samples_failed} ${t("classify.samplesFailed")}`
+              : null}
+          </p>
+
           {result.model ? (
             <p className="muted small">
               {t("classify.model")}: {result.model}

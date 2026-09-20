@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useI18n } from "../i18n";
+import { TAG_NAME_MAX_CHARS } from "../lib/limits";
 
 type TagPickerProps = {
   tags: string[];
@@ -38,6 +39,7 @@ export function TagPicker({ tags, suggestions, onChange }: TagPickerProps) {
         list="tag-suggestions"
         value={draft}
         placeholder={t("notes.addTag")}
+        maxLength={TAG_NAME_MAX_CHARS}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter") {

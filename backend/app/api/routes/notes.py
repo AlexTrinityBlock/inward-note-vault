@@ -5,19 +5,22 @@ ciphertext: the browser encrypts them and the API stores opaque strings, so the
 server can never read an encrypted note's title or body.
 """
 
+import asyncio
 from datetime import datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from typesafe_sdk import TypeSafeError
 
 from app import crud
-from app.api.deps import ClassifyQuota, CurrentUser, SessionDep, TypeSafeDep
+from app.api.deps import CurrentUser, SessionDep, SettingsDep, TypeSafeDep, reserve_classify_calls
+from app.core.limits import LimitExceeded, split_windows
 from app.core.typesafe import (
     TAG_THRESHOLD,
+    Classification,
     FolderOption,
     TagOption,
+    average_classifications,
     classify_note,
 )
 from app.models import NOTEBOOK_ENCRYPTED, NOTEBOOK_PLAIN, Note
@@ -96,13 +99,18 @@ class TagSuggestionRead(BaseModel):
 
 
 class ClassificationRead(BaseModel):
-    """Suggestions from one Jev request. The user accepts or ignores them."""
+    """Suggestions from one Jev run. The user accepts or ignores them."""
 
     model: str | None
     folder: FolderSuggestionRead
     tags: list[TagSuggestionRead]
     tag_threshold: float
     asked_about_encrypted_content: bool
+    # A long note is sampled in consecutive windows; the answers above are their
+    # average. `samples_failed` counts windows Jev could not answer.
+    samples: int
+    samples_failed: int
+    characters: int
 
 
 def _read(note: Note) -> NoteRead:
@@ -148,6 +156,16 @@ def _validate_payload(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Plain notes store `title` and `body`, not ciphertext",
             )
+
+
+def _apply_tags(session: SessionDep, note: Note, names: list[str]) -> Note:
+    """Set a note's tags, reporting a vault limit as a validation error."""
+    try:
+        return crud.set_note_tags(session, note, names)
+    except LimitExceeded as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+        ) from error
 
 
 def _require_folder(session: SessionDep, folder_id: int | None) -> None:
@@ -204,7 +222,7 @@ def create_note(payload: NoteCreate, session: SessionDep, _user: CurrentUser) ->
         folder_id=payload.folder_id,
     )
     if payload.tags:
-        note = crud.set_note_tags(session, note, payload.tags)
+        note = _apply_tags(session, note, payload.tags)
     return _read(note)
 
 
@@ -250,7 +268,7 @@ def update_note(
     if fields:
         note = crud.update_note(session, note, **fields)
     if payload.tags is not None:
-        note = crud.set_note_tags(session, note, payload.tags)
+        note = _apply_tags(session, note, payload.tags)
     return _read(note)
 
 
@@ -268,13 +286,14 @@ async def classify(
     note_id: int,
     payload: ClassifyRequest,
     session: SessionDep,
-    _quota: ClassifyQuota,
+    settings: SettingsDep,
     client: TypeSafeDep,
     _user: CurrentUser,
 ) -> ClassificationRead:
     """Ask Jev where a note belongs: one folder, plus candidate tags.
 
-    Encrypted notes are only sent after the caller confirms (`consent`) that
+    Text longer than one window is sampled window by window and averaged. An
+    encrypted note is only sent after the caller confirms (`consent`) that
     TypeSafe will see the decrypted text, which the server passes through
     without storing.
     """
@@ -307,15 +326,30 @@ async def classify(
     # invents a tag, so an empty vault yields no tag questions.
     candidates = [TagOption(name=tag.name, id=tag.id) for tag in crud.list_tags(session)]
 
-    try:
-        result = await classify_note(
-            client, title=title, content=content, folders=folders, tags=candidates
-        )
-    except TypeSafeError as error:
+    # A note longer than one window is sampled window by window — Jev never sees
+    # more than `classify_window_chars` at a time — and the answers are averaged,
+    # so no part of the note is dropped.
+    windows = split_windows(content, settings.classify_window_chars)
+    reserve_classify_calls(_user.id, len(windows), settings.classify_requests_per_minute)
+
+    outcomes = await asyncio.gather(
+        *(
+            classify_note(client, title=title, content=window, folders=folders, tags=candidates)
+            for window in windows
+        ),
+        return_exceptions=True,
+    )
+
+    samples = [outcome for outcome in outcomes if isinstance(outcome, Classification)]
+    failures = [outcome for outcome in outcomes if isinstance(outcome, BaseException)]
+
+    if not samples:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"TypeSafe request failed: {error}",
-        ) from error
+            detail=f"TypeSafe request failed: {failures[0]}",
+        )
+
+    result = average_classifications(samples, folders)
 
     return ClassificationRead(
         model=result.model,
@@ -330,4 +364,7 @@ async def classify(
         ],
         tag_threshold=TAG_THRESHOLD,
         asked_about_encrypted_content=note.notebook == NOTEBOOK_ENCRYPTED,
+        samples=len(samples),
+        samples_failed=len(failures),
+        characters=len(content),
     )

@@ -162,7 +162,7 @@ export const getCreateTagUrl = () => {
 }
 
 /**
- * Create a tag, if the name is new.
+ * Create a tag, if the name is new and the vault has room for it.
  * @summary Create Tag
  */
 export const createTag = async (tagCreate: TagCreate, options?: Parameters<typeof apiFetch>[1]): Promise<TagRead> => {

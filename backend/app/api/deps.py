@@ -68,29 +68,28 @@ _classify_calls: dict[int, deque[float]] = defaultdict(deque)
 CLASSIFY_WINDOW_SECONDS = 60.0
 
 
-def enforce_classify_quota(user: CurrentUser, settings: SettingsDep) -> bool:
-    """Cap how often one account may ask Jev to classify.
+def reserve_classify_calls(user_id: int, count: int, limit: int) -> None:
+    """Reserve `count` paid Jev requests for one account, or refuse with a 429.
 
-    Each call is a paid request, so this stops a runaway client (or a stuck
-    browser tab) from spending without bound.
+    A long note is sampled in several windows, so a single classification can
+    cost several requests. Reserving them up front keeps a run from stopping
+    halfway through a note, and keeps a runaway client from spending without
+    bound.
     """
-    limit = settings.classify_requests_per_minute
     now = time.monotonic()
-    calls = _classify_calls[user.id]
+    calls = _classify_calls[user_id]
 
     while calls and now - calls[0] >= CLASSIFY_WINDOW_SECONDS:
         calls.popleft()
 
-    if len(calls) >= limit:
+    if len(calls) + count > limit:
+        remaining = max(limit - len(calls), 0)
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=(
-                f"At most {limit} classifications per minute; wait a moment before asking Jev again"
+                f"This note needs {count} Jev request(s) and {remaining} of the "
+                f"{limit}-per-minute budget is left; try again in a moment"
             ),
         )
 
-    calls.append(now)
-    return True
-
-
-ClassifyQuota = Annotated[bool, Depends(enforce_classify_quota)]
+    calls.extend([now] * count)

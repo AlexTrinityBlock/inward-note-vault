@@ -6,6 +6,8 @@ from pathlib import Path
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.limits import DEFAULT_CLASSIFY_WINDOW_CHARS
+
 
 class Settings(BaseSettings):
     """Runtime configuration for the API."""
@@ -52,6 +54,13 @@ class Settings(BaseSettings):
     classify_requests_per_minute: int = Field(
         default=10,
         validation_alias=AliasChoices("INWARD_CLASSIFY_REQUESTS_PER_MINUTE"),
+    )
+
+    # How much text one Jev request sees. Longer notes are sampled in windows
+    # of this size and the answers are averaged.
+    classify_window_chars: int = Field(
+        default=DEFAULT_CLASSIFY_WINDOW_CHARS,
+        validation_alias=AliasChoices("INWARD_CLASSIFY_WINDOW_CHARS"),
     )
 
     @property

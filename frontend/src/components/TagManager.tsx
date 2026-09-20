@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { TagRead } from "../client/generated/models";
 import { useI18n } from "../i18n";
+import { TAG_COUNT_MAX, TAG_NAME_MAX_CHARS } from "../lib/limits";
 
 type TagManagerProps = {
   tags: TagRead[];
@@ -71,22 +72,27 @@ export function TagManager({ tags, active, onFilter, onCreate, onDelete }: TagMa
         </ul>
       )}
 
-      <div className="inline-field">
-        <input
-          value={draft}
-          placeholder={t("notes.addTag")}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              commit();
-            }
-          }}
-        />
-        <button type="button" onClick={commit}>
-          {t("common.add")}
-        </button>
-      </div>
+      {tags.length >= TAG_COUNT_MAX ? (
+        <p className="hint">{t("tags.atLimit")}</p>
+      ) : (
+        <div className="inline-field">
+          <input
+            value={draft}
+            placeholder={t("notes.addTag")}
+            maxLength={TAG_NAME_MAX_CHARS}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                commit();
+              }
+            }}
+          />
+          <button type="button" onClick={commit}>
+            {t("common.add")}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

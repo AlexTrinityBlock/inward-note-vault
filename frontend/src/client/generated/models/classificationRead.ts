@@ -8,7 +8,7 @@ import type { FolderSuggestionRead } from './folderSuggestionRead';
 import type { TagSuggestionRead } from './tagSuggestionRead';
 
 /**
- * Suggestions from one Jev request. The user accepts or ignores them.
+ * Suggestions from one Jev run. The user accepts or ignores them.
  */
 export interface ClassificationRead {
   model: string | null;
@@ -16,4 +16,7 @@ export interface ClassificationRead {
   tags: TagSuggestionRead[];
   tag_threshold: number;
   asked_about_encrypted_content: boolean;
+  samples: number;
+  samples_failed: number;
+  characters: number;
 }

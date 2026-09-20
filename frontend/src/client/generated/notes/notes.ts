@@ -526,7 +526,8 @@ export const useDeleteNote = <TError = HTTPValidationError,
 /**
  * Ask Jev where a note belongs: one folder, plus candidate tags.
  *
- * Encrypted notes are only sent after the caller confirms (`consent`) that
+ * Text longer than one window is sampled window by window and averaged. An
+ * encrypted note is only sent after the caller confirms (`consent`) that
  * TypeSafe will see the decrypted text, which the server passes through
  * without storing.
  * @summary Classify

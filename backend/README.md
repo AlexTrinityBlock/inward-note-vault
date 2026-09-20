@@ -75,6 +75,8 @@ uv run alembic revision --autogenerate -m "describe the change"
 | `INWARD_COOKIE_SECURE` | `false` | Set when serving over HTTPS |
 | `INWARD_CORS_ORIGINS` | `["http://localhost:5173"]` | Extra browser origins for development |
 | `INWARD_STATIC_DIR` | `../frontend/dist` | Built client to serve |
+| `INWARD_CLASSIFY_WINDOW_CHARS` | `10000` | Text per Jev request; longer notes are sampled |
+| `INWARD_CLASSIFY_REQUESTS_PER_MINUTE` | `10` | Spend cap, counted in windows |
 | `TYPESAFE_API_KEY` | — | Fallback when no key is stored in the database |
 
 `.env` is read from this directory and from the repository root.
@@ -99,17 +101,31 @@ uv run alembic revision --autogenerate -m "describe the change"
 
 ## TypeSafe judgments
 
-Classification is one request per note: one `Choice` over the existing folders
-(always including a "nothing fits" option) plus one `Noul` per candidate tag, so
-several tags can be true at once. Candidates are **the tags the user created**,
-capped at 24 — Jev selects from what exists and never invents a tag, so an empty
-vault simply produces no tag questions. The UI's Tags panel is where that
-vocabulary is built. Design guidance lives in the TypeSafe skill at
-`.dsh/skills/typesafe-ai`, and the live docs at <https://docs.typesafe.ai> are
-the source of truth for API details.
+Classification is one request per **window** of a note: one `Choice` over the
+existing folders (always including a "nothing fits" option) plus one `Noul` per
+candidate tag, so several tags can be true at once.
+
+- **Candidates are the tags the user created**, capped at `TAG_COUNT_MAX` (200,
+  each name at most 50 characters). Jev selects from what exists and never
+  invents a tag, so an empty vault simply produces no tag questions. The UI's
+  Tags panel is where that vocabulary is built.
+- **Long notes are sampled.** Text is cut into consecutive windows of
+  `INWARD_CLASSIFY_WINDOW_CHARS` (default 10,000 characters, nothing dropped),
+  each window is classified, and the answers are averaged: tags average their
+  yes-probabilities, the folder averages its whole option distribution before a
+  winner is taken. A window that fails is skipped and counted in
+  `samples_failed`; if every window fails the request is a 502.
+- **Confidence with several samples is the mean of the samples' confidences**,
+  not a recomputed measure of the averaged distribution.
+- **Spend is capped** at `INWARD_CLASSIFY_REQUESTS_PER_MINUTE` (default 10) per
+  account, counted in windows: a note needing more windows than the remaining
+  budget is refused up front with a 429 rather than stopping halfway.
+
+Design guidance lives in the TypeSafe skill at `.dsh/skills/typesafe-ai`, and
+the live docs at <https://docs.typesafe.ai> are the source of truth for API
+details — including the 64k request budget and the 32k `state`-plus-longest-
+question budget that the window size stays well inside.
 
 The key Jev uses is the one stored in the vault, falling back to
 `TYPESAFE_API_KEY` from the environment; `GET /api/settings` reports which
-(`typesafe_source`: `stored`, `env`, or `null`). Classification is rate limited
-to `INWARD_CLASSIFY_REQUESTS_PER_MINUTE` (default 10) per account, because every
-call is a paid request.
+(`typesafe_source`: `stored`, `env`, or `null`).

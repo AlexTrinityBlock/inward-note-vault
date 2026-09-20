@@ -106,7 +106,8 @@ class Tag(TimestampMixin, Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(80), unique=True)
+    # 50 characters: a label, not a sentence. See `app.core.limits`.
+    name: Mapped[str] = mapped_column(String(50), unique=True)
 
 
 class NoteTag(Base):

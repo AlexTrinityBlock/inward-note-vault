@@ -5,6 +5,7 @@ from datetime import timedelta
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.limits import TAG_COUNT_MAX, LimitExceeded, clean_tag_name
 from app.core.security import (
     hash_password,
     hash_session_token,
@@ -273,10 +274,32 @@ def tag_usage(session: Session) -> dict[int, int]:
     return {tag_id: count for tag_id, count in rows}
 
 
+def resolve_note_tags(session: Session, names: list[str]) -> list[Tag]:
+    """Resolve tag names for a note, creating new ones within the vault's limits.
+
+    Raises `LimitExceeded` when a name is too long or the vault is full, so a
+    note can never smuggle in a tag the tag endpoints would refuse.
+    """
+    cleaned: list[str] = []
+    for name in names:
+        candidate = clean_tag_name(name)
+        if candidate.lower() not in {seen.lower() for seen in cleaned}:
+            cleaned.append(candidate)
+
+    known = {tag.name.lower(): tag for tag in list_tags(session)}
+    new_names = [name for name in cleaned if name.lower() not in known]
+    if len(known) + len(new_names) > TAG_COUNT_MAX:
+        raise LimitExceeded(f"The vault already holds the maximum of {TAG_COUNT_MAX} tags")
+
+    return [
+        known[name.lower()] if name.lower() in known else get_or_create_tag(session, name)
+        for name in cleaned
+    ]
+
+
 def set_note_tags(session: Session, note: Note, names: list[str]) -> Note:
     """Replace a note's tags with the given names."""
-    tags = [get_or_create_tag(session, name) for name in names if name.strip()]
-    note.tags = tags
+    note.tags = resolve_note_tags(session, names)
     session.commit()
     session.refresh(note)
     return note

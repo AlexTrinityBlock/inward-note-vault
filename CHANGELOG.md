@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Long notes are no longer truncated: the text is cut into consecutive windows
+  of 10,000 characters (`INWARD_CLASSIFY_WINDOW_CHARS`), each window is
+  classified, and the answers are averaged — tags average their probabilities,
+  and the folder averages its whole option distribution before a winner is
+  taken. A window that fails is skipped and reported; if every window fails the
+  request is a 502.
+- Vault limits are now explicit: at most 200 tags, each name at most 50
+  characters, enforced on the tag endpoints *and* on tags added through a note.
+  The classification spend cap counts windows, so a long note reserves its
+  requests up front and is refused with a 429 rather than stopping halfway.
 - Jev now chooses tags only from the vocabulary the user created. The shipped
   twelve-tag starter list is gone, so a fresh vault asks no tag questions at all
   instead of suggesting labels nobody asked for; the Tags panel is where the

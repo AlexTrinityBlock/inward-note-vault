@@ -11,7 +11,7 @@
 export interface TagCreate {
   /**
      * @minLength 1
-     * @maxLength 80
+     * @maxLength 50
      */
   name: string;
 }

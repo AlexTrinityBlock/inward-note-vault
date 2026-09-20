@@ -6,7 +6,7 @@ Credentials stay on the server: the browser only ever talks to this API.
 """
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from typesafe_sdk import AsyncTypeSafeClient, Choice, Noul
@@ -48,11 +48,17 @@ class TagOption:
 
 @dataclass(frozen=True, slots=True)
 class FolderSuggestion:
-    """Where Jev would file the note, with the answer's own confidence."""
+    """Where Jev would file the note, with the answer's own confidence.
+
+    `probabilities` maps every offered option to its probability, keyed by
+    folder id (or `NO_FOLDER`), which is what makes averaging across windows
+    possible.
+    """
 
     folder_id: int | None
     path: str | None
     confidence: float
+    probabilities: dict[int | str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,7 +71,7 @@ class TagSuggestion:
 
 @dataclass(frozen=True, slots=True)
 class Classification:
-    """One classification round trip's worth of suggestions."""
+    """One Jev request's worth of suggestions."""
 
     folder: FolderSuggestion
     tags: list[TagSuggestion]
@@ -166,7 +172,11 @@ async def classify_note(
     tags: Sequence[TagOption],
     model: str | None = None,
 ) -> Classification:
-    """Ask Jev where a note belongs: one folder, plus zero or more tags."""
+    """Ask Jev about one window of a note: one folder, plus zero or more tags.
+
+    Callers with a long note send several windows and average them with
+    `average_classifications`.
+    """
     folder_options = list(folders)
     tag_options = list(tags)[:MAX_TAG_CANDIDATES]
 
@@ -179,6 +189,14 @@ async def classify_note(
     _, by_key = _folder_criteria(folder_options)
     folder_answer = response.choices["folder"]
     chosen = by_key.get(folder_answer.choice)
+
+    # Re-key the distribution by folder id, so windows can be averaged even
+    # when their option keys were disambiguated differently.
+    probabilities: dict[int | str, float] = {}
+    for key, probability in (getattr(folder_answer, "probabilities", None) or {}).items():
+        option = by_key.get(key)
+        stable_key: int | str = option.id if option else NO_FOLDER
+        probabilities[stable_key] = probabilities.get(stable_key, 0.0) + float(probability)
 
     suggestions = [
         TagSuggestion(
@@ -194,7 +212,60 @@ async def classify_note(
             folder_id=chosen.id if chosen else None,
             path=chosen.path if chosen else None,
             confidence=float(folder_answer.confidence),
+            probabilities=probabilities,
         ),
         tags=suggestions,
         model=getattr(response, "model", None),
+    )
+
+
+def average_classifications(
+    results: Sequence[Classification], folders: Sequence[FolderOption] = ()
+) -> Classification:
+    """Average the judgments of several windows into one recommendation.
+
+    Every window saw the same questions, so a plain mean is well defined: tags
+    average their yes-probabilities, and the folder averages its option
+    distribution before the winner is taken. A tag or option a window did not
+    mention counts as zero.
+    """
+    if not results:
+        raise ValueError("nothing to average")
+    if len(results) == 1:
+        return results[0]
+
+    total = float(len(results))
+
+    tag_names: list[str] = []
+    tag_totals: dict[str, float] = {}
+    for result in results:
+        for suggestion in result.tags:
+            if suggestion.name not in tag_totals:
+                tag_totals[suggestion.name] = 0.0
+                tag_names.append(suggestion.name)
+            tag_totals[suggestion.name] += suggestion.probability
+
+    averaged_tags = [
+        TagSuggestion(name=name, probability=tag_totals[name] / total) for name in tag_names
+    ]
+    averaged_tags.sort(key=lambda suggestion: suggestion.probability, reverse=True)
+
+    folder_totals: dict[int | str, float] = {}
+    for result in results:
+        for key, probability in result.folder.probabilities.items():
+            folder_totals[key] = folder_totals.get(key, 0.0) + probability
+
+    by_id = {folder.id: folder for folder in folders}
+    winner = max(folder_totals, key=lambda key: folder_totals[key]) if folder_totals else NO_FOLDER
+    winner_folder = by_id.get(winner) if isinstance(winner, int) else None
+
+    return Classification(
+        folder=FolderSuggestion(
+            folder_id=winner_folder.id if winner_folder else None,
+            path=winner_folder.path if winner_folder else None,
+            confidence=sum(result.folder.confidence for result in results) / total,
+            probabilities={key: value / total for key, value in folder_totals.items()},
+        ),
+        tags=averaged_tags,
+        model=results[0].model,
     )

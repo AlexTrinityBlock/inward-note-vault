@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
+from app.core.limits import TAG_COUNT_MAX, TAG_NAME_MAX_CHARS, LimitExceeded, clean_tag_name
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
@@ -20,13 +21,13 @@ class TagRead(BaseModel):
 class TagCreate(BaseModel):
     """Payload for creating a tag."""
 
-    name: str = Field(min_length=1, max_length=80)
+    name: str = Field(min_length=1, max_length=TAG_NAME_MAX_CHARS)
 
 
 class TagUpdate(BaseModel):
     """Payload for renaming a tag."""
 
-    name: str = Field(min_length=1, max_length=80)
+    name: str = Field(min_length=1, max_length=TAG_NAME_MAX_CHARS)
 
 
 def _read_all(session: SessionDep) -> list[TagRead]:
@@ -45,10 +46,18 @@ def list_tags(session: SessionDep, _user: CurrentUser) -> list[TagRead]:
 
 @router.post("", status_code=status.HTTP_201_CREATED, operation_id="createTag")
 def create_tag(payload: TagCreate, session: SessionDep, _user: CurrentUser) -> TagRead:
-    """Create a tag, if the name is new."""
+    """Create a tag, if the name is new and the vault has room for it."""
     name = payload.name.strip()
-    if any(tag.name.lower() == name.lower() for tag in crud.list_tags(session)):
+    existing = crud.list_tags(session)
+
+    if any(tag.name.lower() == name.lower() for tag in existing):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Tag already exists")
+    if len(existing) >= TAG_COUNT_MAX:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"The vault already holds the maximum of {TAG_COUNT_MAX} tags",
+        )
+
     tag = crud.get_or_create_tag(session, name)
     session.commit()
     return TagRead(id=tag.id, name=tag.name, note_count=0)
@@ -62,7 +71,13 @@ def rename_tag(
     tag = crud.get_tag(session, tag_id)
     if tag is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
-    crud.rename_tag(session, tag, payload.name)
+
+    try:
+        crud.rename_tag(session, tag, clean_tag_name(payload.name))
+    except LimitExceeded as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+        ) from error
     return _read_all(session)
 
 
