@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from typesafe_sdk import TypeSafeError
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, TypeSafeDep
+from app.api.deps import ClassifyQuota, CurrentUser, SessionDep, TypeSafeDep
 from app.core.typesafe import (
     DEFAULT_TAGS,
     TAG_THRESHOLD,
@@ -270,6 +270,7 @@ async def classify(
     note_id: int,
     payload: ClassifyRequest,
     session: SessionDep,
+    _quota: ClassifyQuota,
     client: TypeSafeDep,
     _user: CurrentUser,
 ) -> ClassificationRead:

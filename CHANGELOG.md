@@ -4,6 +4,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- The generated API client returned error bodies as if they were successful
+  data, so `isError` never fired, a 401 flowed into components as an object, and
+  the vault crashed instead of showing the sign-in screen. Every request now
+  goes through `src/client/http.ts`, which throws an `ApiError` carrying the
+  server's `detail`.
+- The encrypted-notebook provider was never mounted, so the workspace crashed on
+  first render. It now wraps the vault route in `src/routes/router.tsx`.
+- The classification panel re-asked Jev on every render, because its effect
+  depended on a callback whose identity changed each time. It now asks at most
+  once per note.
+- Auto-classification ran when a note was created, spending a request on an
+  empty note; it now runs once per note, after a save with content.
+
+### Added
+
+- A per-account classification quota (10 requests per minute by default,
+  `INWARD_CLASSIFY_REQUESTS_PER_MINUTE`) so a client bug cannot spend without
+  bound; exceeding it returns 429.
+
 ## [0.2.0] - 2026-09-20
 
 First working release: the vault runs end to end on SQLite, with browser-side

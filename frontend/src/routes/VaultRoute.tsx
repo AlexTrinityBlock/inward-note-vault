@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import {
   useCreateFolder,
@@ -44,6 +44,8 @@ export function VaultRoute() {
   const [classifyId, setClassifyId] = useState<number | null>(null);
   const [unlockMode, setUnlockMode] = useState<"create" | "unlock">("unlock");
   const [showUnlock, setShowUnlock] = useState(false);
+  // Notes already offered to Jev automatically, so a save never re-asks.
+  const autoClassified = useRef<Set<number>>(new Set());
 
   const notesQuery = useListNotes({
     notebook: tab,
@@ -100,9 +102,6 @@ export function VaultRoute() {
       const created = await createNote.mutateAsync({ data: payload });
       await refresh();
       setSelectedId(created.id);
-      if (settings.data?.auto_classify_enabled) {
-        setClassifyId(created.id);
-      }
       return;
     }
 
@@ -111,9 +110,6 @@ export function VaultRoute() {
     });
     await refresh();
     setSelectedId(created.id);
-    if (settings.data?.auto_classify_enabled) {
-      setClassifyId(created.id);
-    }
   }
 
   async function saveNote(note: NoteRead, payload: NoteSavePayload) {
@@ -148,6 +144,17 @@ export function VaultRoute() {
       });
     }
     await refresh();
+
+    // Auto-classify runs once per note, and only once there is something to
+    // read: an empty note would spend a request on nothing.
+    if (
+      settings.data?.auto_classify_enabled &&
+      secret.body.trim() !== "" &&
+      !autoClassified.current.has(note.id)
+    ) {
+      autoClassified.current.add(note.id);
+      setClassifyId(note.id);
+    }
   }
 
   async function applySuggestions(

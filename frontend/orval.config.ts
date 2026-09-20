@@ -20,6 +20,9 @@ export default defineConfig({
       mode: "tags-split",
       mock: false,
       override: {
+        // Route every request through a fetcher that throws on non-2xx, so
+        // React Query's error states actually work.
+        mutator: { path: "./src/client/http.ts", name: "apiFetch" },
         fetch: {
           // Hooks then resolve to the payload itself instead of a
           // `{ status, data }` union, which keeps call sites readable.

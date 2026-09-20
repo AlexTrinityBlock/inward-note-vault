@@ -74,6 +74,19 @@ def test_classify_requires_an_api_key(account: TestClient) -> None:
     assert "API key" in response.json()["detail"]
 
 
+def test_classify_is_rate_limited(account: TestClient, fake_typesafe: FakeTypeSafeClient) -> None:
+    """Every classification costs money, so a runaway client gets a 429."""
+    note = account.post("/api/notes", json={"title": "Note", "body": "Body"}).json()
+
+    statuses = [
+        account.post(f"/api/notes/{note['id']}/classify", json={}).status_code for _ in range(11)
+    ]
+
+    assert statuses[:10] == [200] * 10
+    assert statuses[10] == 429
+    assert len(fake_typesafe.calls) == 10
+
+
 def test_classify_returns_folder_and_ranked_tags(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:

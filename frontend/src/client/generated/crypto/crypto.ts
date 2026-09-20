@@ -29,7 +29,10 @@ import type {
   HTTPValidationError
 } from '../models';
 
+import { apiFetch } from '../../http';
 
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -60,23 +63,16 @@ export const getGetCryptoProfileUrl = () => {
  * Read the encrypted notebook's key-derivation parameters.
  * @summary Read Profile
  */
-export const getCryptoProfile = async ( options?: RequestInit): Promise<CryptoProfileRead> => {
+export const getCryptoProfile = async ( options?: Parameters<typeof apiFetch>[1]): Promise<CryptoProfileRead> => {
 
-  const res = await fetch(getGetCryptoProfileUrl(),
+  return apiFetch<CryptoProfileRead>(getGetCryptoProfileUrl(),
   {
     ...options,
     method: 'GET'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: CryptoProfileRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -89,16 +85,16 @@ export const getGetCryptoProfileQueryKey = () => {
     }
 
 
-export const getGetCryptoProfileQueryOptions = <TData = Awaited<ReturnType<typeof getCryptoProfile>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCryptoProfile>>, TError, TData>>, fetch?: RequestInit}
+export const getGetCryptoProfileQueryOptions = <TData = Awaited<ReturnType<typeof getCryptoProfile>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCryptoProfile>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetCryptoProfileQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCryptoProfile>>> = ({ signal }) => getCryptoProfile({ signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCryptoProfile>>> = ({ signal }) => getCryptoProfile({ signal, ...requestOptions });
 
 
 
@@ -118,7 +114,7 @@ export function useGetCryptoProfile<TData = Awaited<ReturnType<typeof getCryptoP
           TError,
           Awaited<ReturnType<typeof getCryptoProfile>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetCryptoProfile<TData = Awaited<ReturnType<typeof getCryptoProfile>>, TError = unknown>(
@@ -128,11 +124,11 @@ export function useGetCryptoProfile<TData = Awaited<ReturnType<typeof getCryptoP
           TError,
           Awaited<ReturnType<typeof getCryptoProfile>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetCryptoProfile<TData = Awaited<ReturnType<typeof getCryptoProfile>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCryptoProfile>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCryptoProfile>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -140,7 +136,7 @@ export function useGetCryptoProfile<TData = Awaited<ReturnType<typeof getCryptoP
  */
 
 export function useGetCryptoProfile<TData = Awaited<ReturnType<typeof getCryptoProfile>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCryptoProfile>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCryptoProfile>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -168,7 +164,7 @@ export const getCreateCryptoProfileUrl = () => {
  * Store the parameters once, the first time the notebook is unlocked.
  * @summary Create Profile
  */
-export const createCryptoProfile = async (cryptoProfileCreate: CryptoProfileCreate, options?: RequestInit): Promise<CryptoProfileRead> => {
+export const createCryptoProfile = async (cryptoProfileCreate: CryptoProfileCreate, options?: Parameters<typeof apiFetch>[1]): Promise<CryptoProfileRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -184,21 +180,14 @@ export const createCryptoProfile = async (cryptoProfileCreate: CryptoProfileCrea
     }
     return headers;
   };
-const res = await fetch(getCreateCryptoProfileUrl(),
+return apiFetch<CryptoProfileRead>(getCreateCryptoProfileUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(cryptoProfileCreate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: CryptoProfileRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -207,15 +196,15 @@ const res = await fetch(getCreateCryptoProfileUrl(),
 export const getCreateCryptoProfileMutationKey = () => ['createCryptoProfile'] as const;
 
 export const getCreateCryptoProfileMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCryptoProfile>>, TError,CreateCryptoProfileMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCryptoProfile>>, TError,CreateCryptoProfileMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createCryptoProfile>>, TError,CreateCryptoProfileMutationVariables, TContext> => {
 
 const mutationKey = getCreateCryptoProfileMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -223,7 +212,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCryptoProfile>>, CreateCryptoProfileMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  createCryptoProfile(data,fetchOptions)
+          return  createCryptoProfile(data,requestOptions)
         }
 
 
@@ -242,7 +231,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Create Profile
  */
 export const useCreateCryptoProfile = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCryptoProfile>>, TError,CreateCryptoProfileMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCryptoProfile>>, TError,CreateCryptoProfileMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createCryptoProfile>>,
         TError,

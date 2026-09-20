@@ -30,7 +30,10 @@ import type {
   HTTPValidationError
 } from '../models';
 
+import { apiFetch } from '../../http';
 
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -61,23 +64,16 @@ export const getListFoldersUrl = () => {
  * List every folder, flat, with its path.
  * @summary List Folders
  */
-export const listFolders = async ( options?: RequestInit): Promise<FolderRead[]> => {
+export const listFolders = async ( options?: Parameters<typeof apiFetch>[1]): Promise<FolderRead[]> => {
 
-  const res = await fetch(getListFoldersUrl(),
+  return apiFetch<FolderRead[]>(getListFoldersUrl(),
   {
     ...options,
     method: 'GET'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: FolderRead[] = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -90,16 +86,16 @@ export const getListFoldersQueryKey = () => {
     }
 
 
-export const getListFoldersQueryOptions = <TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, fetch?: RequestInit}
+export const getListFoldersQueryOptions = <TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListFoldersQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFolders>>> = ({ signal }) => listFolders({ signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFolders>>> = ({ signal }) => listFolders({ signal, ...requestOptions });
 
 
 
@@ -119,7 +115,7 @@ export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, 
           TError,
           Awaited<ReturnType<typeof listFolders>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>(
@@ -129,11 +125,11 @@ export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, 
           TError,
           Awaited<ReturnType<typeof listFolders>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -141,7 +137,7 @@ export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, 
  */
 
 export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -169,7 +165,7 @@ export const getCreateFolderUrl = () => {
  * Create a folder, optionally inside another one.
  * @summary Create Folder
  */
-export const createFolder = async (folderCreate: FolderCreate, options?: RequestInit): Promise<FolderRead> => {
+export const createFolder = async (folderCreate: FolderCreate, options?: Parameters<typeof apiFetch>[1]): Promise<FolderRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -185,21 +181,14 @@ export const createFolder = async (folderCreate: FolderCreate, options?: Request
     }
     return headers;
   };
-const res = await fetch(getCreateFolderUrl(),
+return apiFetch<FolderRead>(getCreateFolderUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(folderCreate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: FolderRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -208,15 +197,15 @@ const res = await fetch(getCreateFolderUrl(),
 export const getCreateFolderMutationKey = () => ['createFolder'] as const;
 
 export const getCreateFolderMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFolder>>, TError,CreateFolderMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFolder>>, TError,CreateFolderMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createFolder>>, TError,CreateFolderMutationVariables, TContext> => {
 
 const mutationKey = getCreateFolderMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -224,7 +213,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFolder>>, CreateFolderMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  createFolder(data,fetchOptions)
+          return  createFolder(data,requestOptions)
         }
 
 
@@ -243,7 +232,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Create Folder
  */
 export const useCreateFolder = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFolder>>, TError,CreateFolderMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFolder>>, TError,CreateFolderMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createFolder>>,
         TError,
@@ -264,23 +253,16 @@ export const useCreateFolder = <TError = HTTPValidationError,
  * Fetch a single folder.
  * @summary Get Folder
  */
-export const getFolder = async (folderId: number, options?: RequestInit): Promise<FolderRead> => {
+export const getFolder = async (folderId: number, options?: Parameters<typeof apiFetch>[1]): Promise<FolderRead> => {
 
-  const res = await fetch(getGetFolderUrl(folderId),
+  return apiFetch<FolderRead>(getGetFolderUrl(folderId),
   {
     ...options,
     method: 'GET'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: FolderRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -293,16 +275,16 @@ export const getGetFolderQueryKey = (folderId: number,) => {
     }
 
 
-export const getGetFolderQueryOptions = <TData = Awaited<ReturnType<typeof getFolder>>, TError = HTTPValidationError>(folderId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFolder>>, TError, TData>>, fetch?: RequestInit}
+export const getGetFolderQueryOptions = <TData = Awaited<ReturnType<typeof getFolder>>, TError = HTTPValidationError>(folderId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFolder>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetFolderQueryKey(folderId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFolder>>> = ({ signal }) => getFolder(folderId, { signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFolder>>> = ({ signal }) => getFolder(folderId, { signal, ...requestOptions });
 
 
 
@@ -322,7 +304,7 @@ export function useGetFolder<TData = Awaited<ReturnType<typeof getFolder>>, TErr
           TError,
           Awaited<ReturnType<typeof getFolder>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetFolder<TData = Awaited<ReturnType<typeof getFolder>>, TError = HTTPValidationError>(
@@ -332,11 +314,11 @@ export function useGetFolder<TData = Awaited<ReturnType<typeof getFolder>>, TErr
           TError,
           Awaited<ReturnType<typeof getFolder>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetFolder<TData = Awaited<ReturnType<typeof getFolder>>, TError = HTTPValidationError>(
- folderId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFolder>>, TError, TData>>, fetch?: RequestInit}
+ folderId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFolder>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -344,7 +326,7 @@ export function useGetFolder<TData = Awaited<ReturnType<typeof getFolder>>, TErr
  */
 
 export function useGetFolder<TData = Awaited<ReturnType<typeof getFolder>>, TError = HTTPValidationError>(
- folderId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFolder>>, TError, TData>>, fetch?: RequestInit}
+ folderId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFolder>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -373,7 +355,7 @@ export const getUpdateFolderUrl = (folderId: number,) => {
  * @summary Update Folder
  */
 export const updateFolder = async (folderId: number,
-    folderUpdate: FolderUpdate, options?: RequestInit): Promise<FolderRead> => {
+    folderUpdate: FolderUpdate, options?: Parameters<typeof apiFetch>[1]): Promise<FolderRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -389,21 +371,14 @@ export const updateFolder = async (folderId: number,
     }
     return headers;
   };
-const res = await fetch(getUpdateFolderUrl(folderId),
+return apiFetch<FolderRead>(getUpdateFolderUrl(folderId),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(folderUpdate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: FolderRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -412,15 +387,15 @@ const res = await fetch(getUpdateFolderUrl(folderId),
 export const getUpdateFolderMutationKey = () => ['updateFolder'] as const;
 
 export const getUpdateFolderMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFolder>>, TError,UpdateFolderMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFolder>>, TError,UpdateFolderMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateFolder>>, TError,UpdateFolderMutationVariables, TContext> => {
 
 const mutationKey = getUpdateFolderMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -428,7 +403,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFolder>>, UpdateFolderMutationVariables> = (props) => {
           const {folderId,data} = props ?? {};
 
-          return  updateFolder(folderId,data,fetchOptions)
+          return  updateFolder(folderId,data,requestOptions)
         }
 
 
@@ -447,7 +422,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Update Folder
  */
 export const useUpdateFolder = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFolder>>, TError,UpdateFolderMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFolder>>, TError,UpdateFolderMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateFolder>>,
         TError,
@@ -468,23 +443,16 @@ export const useUpdateFolder = <TError = HTTPValidationError,
  * Delete a folder; its notes and subfolders move up to its parent.
  * @summary Delete Folder
  */
-export const deleteFolder = async (folderId: number, options?: RequestInit): Promise<void> => {
+export const deleteFolder = async (folderId: number, options?: Parameters<typeof apiFetch>[1]): Promise<void> => {
 
-  const res = await fetch(getDeleteFolderUrl(folderId),
+  return apiFetch<void>(getDeleteFolderUrl(folderId),
   {
     ...options,
     method: 'DELETE'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: void = body ? JSON.parse(body) : undefined
-  return data
-}
+);}
 
 
 
@@ -493,15 +461,15 @@ export const deleteFolder = async (folderId: number, options?: RequestInit): Pro
 export const getDeleteFolderMutationKey = () => ['deleteFolder'] as const;
 
 export const getDeleteFolderMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFolder>>, TError,DeleteFolderMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFolder>>, TError,DeleteFolderMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteFolder>>, TError,DeleteFolderMutationVariables, TContext> => {
 
 const mutationKey = getDeleteFolderMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -509,7 +477,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteFolder>>, DeleteFolderMutationVariables> = (props) => {
           const {folderId} = props ?? {};
 
-          return  deleteFolder(folderId,fetchOptions)
+          return  deleteFolder(folderId,requestOptions)
         }
 
 
@@ -528,7 +496,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Delete Folder
  */
 export const useDeleteFolder = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFolder>>, TError,DeleteFolderMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFolder>>, TError,DeleteFolderMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteFolder>>,
         TError,

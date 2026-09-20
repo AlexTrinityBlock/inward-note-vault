@@ -47,6 +47,13 @@ class Settings(BaseSettings):
     typesafe_model: str | None = None
     typesafe_timeout_seconds: float = 30.0
 
+    # Safety valve: every classification is a paid TypeSafe request, so a
+    # runaway client cannot be allowed to spend without bound.
+    classify_requests_per_minute: int = Field(
+        default=10,
+        validation_alias=AliasChoices("INWARD_CLASSIFY_REQUESTS_PER_MINUTE"),
+    )
+
     @property
     def sqlite_path(self) -> Path:
         """Filesystem location of the SQLite database."""

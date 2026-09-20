@@ -30,7 +30,10 @@ import type {
   TypeSafeCheck
 } from '../models';
 
+import { apiFetch } from '../../http';
 
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -61,23 +64,16 @@ export const getGetSettingsUrl = () => {
  * Read the stored settings.
  * @summary Read Settings
  */
-export const getSettings = async ( options?: RequestInit): Promise<SettingsRead> => {
+export const getSettings = async ( options?: Parameters<typeof apiFetch>[1]): Promise<SettingsRead> => {
 
-  const res = await fetch(getGetSettingsUrl(),
+  return apiFetch<SettingsRead>(getGetSettingsUrl(),
   {
     ...options,
     method: 'GET'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: SettingsRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -90,16 +86,16 @@ export const getGetSettingsQueryKey = () => {
     }
 
 
-export const getGetSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getSettings>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSettings>>, TError, TData>>, fetch?: RequestInit}
+export const getGetSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getSettings>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSettings>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetSettingsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSettings>>> = ({ signal }) => getSettings({ signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSettings>>> = ({ signal }) => getSettings({ signal, ...requestOptions });
 
 
 
@@ -119,7 +115,7 @@ export function useGetSettings<TData = Awaited<ReturnType<typeof getSettings>>, 
           TError,
           Awaited<ReturnType<typeof getSettings>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetSettings<TData = Awaited<ReturnType<typeof getSettings>>, TError = unknown>(
@@ -129,11 +125,11 @@ export function useGetSettings<TData = Awaited<ReturnType<typeof getSettings>>, 
           TError,
           Awaited<ReturnType<typeof getSettings>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetSettings<TData = Awaited<ReturnType<typeof getSettings>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSettings>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSettings>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -141,7 +137,7 @@ export function useGetSettings<TData = Awaited<ReturnType<typeof getSettings>>, 
  */
 
 export function useGetSettings<TData = Awaited<ReturnType<typeof getSettings>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSettings>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSettings>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -169,7 +165,7 @@ export const getUpdateSettingsUrl = () => {
  * Update the stored settings.
  * @summary Update Settings
  */
-export const updateSettings = async (settingsUpdate: SettingsUpdate, options?: RequestInit): Promise<SettingsRead> => {
+export const updateSettings = async (settingsUpdate: SettingsUpdate, options?: Parameters<typeof apiFetch>[1]): Promise<SettingsRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -185,21 +181,14 @@ export const updateSettings = async (settingsUpdate: SettingsUpdate, options?: R
     }
     return headers;
   };
-const res = await fetch(getUpdateSettingsUrl(),
+return apiFetch<SettingsRead>(getUpdateSettingsUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(settingsUpdate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: SettingsRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -208,15 +197,15 @@ const res = await fetch(getUpdateSettingsUrl(),
 export const getUpdateSettingsMutationKey = () => ['updateSettings'] as const;
 
 export const getUpdateSettingsMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSettings>>, TError,UpdateSettingsMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSettings>>, TError,UpdateSettingsMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateSettings>>, TError,UpdateSettingsMutationVariables, TContext> => {
 
 const mutationKey = getUpdateSettingsMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -224,7 +213,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSettings>>, UpdateSettingsMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  updateSettings(data,fetchOptions)
+          return  updateSettings(data,requestOptions)
         }
 
 
@@ -243,7 +232,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Update Settings
  */
 export const useUpdateSettings = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSettings>>, TError,UpdateSettingsMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSettings>>, TError,UpdateSettingsMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateSettings>>,
         TError,
@@ -264,23 +253,16 @@ export const useUpdateSettings = <TError = HTTPValidationError,
  * Ask TypeSafe for the model list, proving the stored key works.
  * @summary Verify Typesafe
  */
-export const verifyTypesafeKey = async ( options?: RequestInit): Promise<TypeSafeCheck> => {
+export const verifyTypesafeKey = async ( options?: Parameters<typeof apiFetch>[1]): Promise<TypeSafeCheck> => {
 
-  const res = await fetch(getVerifyTypesafeKeyUrl(),
+  return apiFetch<TypeSafeCheck>(getVerifyTypesafeKeyUrl(),
   {
     ...options,
     method: 'POST'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: TypeSafeCheck = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -289,15 +271,15 @@ export const verifyTypesafeKey = async ( options?: RequestInit): Promise<TypeSaf
 export const getVerifyTypesafeKeyMutationKey = () => ['verifyTypesafeKey'] as const;
 
 export const getVerifyTypesafeKeyMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyTypesafeKey>>, TError,void, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyTypesafeKey>>, TError,void, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof verifyTypesafeKey>>, TError,void, TContext> => {
 
 const mutationKey = getVerifyTypesafeKeyMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -305,7 +287,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyTypesafeKey>>, void> = () => {
 
 
-          return  verifyTypesafeKey(fetchOptions)
+          return  verifyTypesafeKey(requestOptions)
         }
 
 
@@ -324,7 +306,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Verify Typesafe
  */
 export const useVerifyTypesafeKey = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyTypesafeKey>>, TError,void, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyTypesafeKey>>, TError,void, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof verifyTypesafeKey>>,
         TError,

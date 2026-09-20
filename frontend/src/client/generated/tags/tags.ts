@@ -30,7 +30,10 @@ import type {
   TagUpdate
 } from '../models';
 
+import { apiFetch } from '../../http';
 
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -61,23 +64,16 @@ export const getListTagsUrl = () => {
  * List every tag with its usage count.
  * @summary List Tags
  */
-export const listTags = async ( options?: RequestInit): Promise<TagRead[]> => {
+export const listTags = async ( options?: Parameters<typeof apiFetch>[1]): Promise<TagRead[]> => {
 
-  const res = await fetch(getListTagsUrl(),
+  return apiFetch<TagRead[]>(getListTagsUrl(),
   {
     ...options,
     method: 'GET'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: TagRead[] = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -90,16 +86,16 @@ export const getListTagsQueryKey = () => {
     }
 
 
-export const getListTagsQueryOptions = <TData = Awaited<ReturnType<typeof listTags>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>>, fetch?: RequestInit}
+export const getListTagsQueryOptions = <TData = Awaited<ReturnType<typeof listTags>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListTagsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTags>>> = ({ signal }) => listTags({ signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTags>>> = ({ signal }) => listTags({ signal, ...requestOptions });
 
 
 
@@ -119,7 +115,7 @@ export function useListTags<TData = Awaited<ReturnType<typeof listTags>>, TError
           TError,
           Awaited<ReturnType<typeof listTags>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListTags<TData = Awaited<ReturnType<typeof listTags>>, TError = unknown>(
@@ -129,11 +125,11 @@ export function useListTags<TData = Awaited<ReturnType<typeof listTags>>, TError
           TError,
           Awaited<ReturnType<typeof listTags>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListTags<TData = Awaited<ReturnType<typeof listTags>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -141,7 +137,7 @@ export function useListTags<TData = Awaited<ReturnType<typeof listTags>>, TError
  */
 
 export function useListTags<TData = Awaited<ReturnType<typeof listTags>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>>, fetch?: RequestInit}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -169,7 +165,7 @@ export const getCreateTagUrl = () => {
  * Create a tag, if the name is new.
  * @summary Create Tag
  */
-export const createTag = async (tagCreate: TagCreate, options?: RequestInit): Promise<TagRead> => {
+export const createTag = async (tagCreate: TagCreate, options?: Parameters<typeof apiFetch>[1]): Promise<TagRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -185,21 +181,14 @@ export const createTag = async (tagCreate: TagCreate, options?: RequestInit): Pr
     }
     return headers;
   };
-const res = await fetch(getCreateTagUrl(),
+return apiFetch<TagRead>(getCreateTagUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(tagCreate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: TagRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -208,15 +197,15 @@ const res = await fetch(getCreateTagUrl(),
 export const getCreateTagMutationKey = () => ['createTag'] as const;
 
 export const getCreateTagMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTag>>, TError,CreateTagMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTag>>, TError,CreateTagMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createTag>>, TError,CreateTagMutationVariables, TContext> => {
 
 const mutationKey = getCreateTagMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -224,7 +213,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTag>>, CreateTagMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  createTag(data,fetchOptions)
+          return  createTag(data,requestOptions)
         }
 
 
@@ -243,7 +232,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Create Tag
  */
 export const useCreateTag = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTag>>, TError,CreateTagMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTag>>, TError,CreateTagMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createTag>>,
         TError,
@@ -265,7 +254,7 @@ export const useCreateTag = <TError = HTTPValidationError,
  * @summary Rename Tag
  */
 export const renameTag = async (tagId: number,
-    tagUpdate: TagUpdate, options?: RequestInit): Promise<TagRead[]> => {
+    tagUpdate: TagUpdate, options?: Parameters<typeof apiFetch>[1]): Promise<TagRead[]> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -281,21 +270,14 @@ export const renameTag = async (tagId: number,
     }
     return headers;
   };
-const res = await fetch(getRenameTagUrl(tagId),
+return apiFetch<TagRead[]>(getRenameTagUrl(tagId),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(tagUpdate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: TagRead[] = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -304,15 +286,15 @@ const res = await fetch(getRenameTagUrl(tagId),
 export const getRenameTagMutationKey = () => ['renameTag'] as const;
 
 export const getRenameTagMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameTag>>, TError,RenameTagMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameTag>>, TError,RenameTagMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof renameTag>>, TError,RenameTagMutationVariables, TContext> => {
 
 const mutationKey = getRenameTagMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -320,7 +302,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof renameTag>>, RenameTagMutationVariables> = (props) => {
           const {tagId,data} = props ?? {};
 
-          return  renameTag(tagId,data,fetchOptions)
+          return  renameTag(tagId,data,requestOptions)
         }
 
 
@@ -339,7 +321,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Rename Tag
  */
 export const useRenameTag = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameTag>>, TError,RenameTagMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameTag>>, TError,RenameTagMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof renameTag>>,
         TError,
@@ -360,23 +342,16 @@ export const useRenameTag = <TError = HTTPValidationError,
  * Delete a tag and remove it from every note.
  * @summary Delete Tag
  */
-export const deleteTag = async (tagId: number, options?: RequestInit): Promise<void> => {
+export const deleteTag = async (tagId: number, options?: Parameters<typeof apiFetch>[1]): Promise<void> => {
 
-  const res = await fetch(getDeleteTagUrl(tagId),
+  return apiFetch<void>(getDeleteTagUrl(tagId),
   {
     ...options,
     method: 'DELETE'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: void = body ? JSON.parse(body) : undefined
-  return data
-}
+);}
 
 
 
@@ -385,15 +360,15 @@ export const deleteTag = async (tagId: number, options?: RequestInit): Promise<v
 export const getDeleteTagMutationKey = () => ['deleteTag'] as const;
 
 export const getDeleteTagMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,DeleteTagMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,DeleteTagMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,DeleteTagMutationVariables, TContext> => {
 
 const mutationKey = getDeleteTagMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -401,7 +376,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTag>>, DeleteTagMutationVariables> = (props) => {
           const {tagId} = props ?? {};
 
-          return  deleteTag(tagId,fetchOptions)
+          return  deleteTag(tagId,requestOptions)
         }
 
 
@@ -420,7 +395,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Delete Tag
  */
 export const useDeleteTag = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,DeleteTagMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,DeleteTagMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteTag>>,
         TError,

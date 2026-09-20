@@ -33,7 +33,10 @@ import type {
   NoteUpdate
 } from '../models';
 
+import { apiFetch } from '../../http';
 
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -71,23 +74,16 @@ export const getListNotesUrl = (params?: ListNotesParams,) => {
  * List notes, newest first, with optional notebook/folder/tag/search filters.
  * @summary List Notes
  */
-export const listNotes = async (params?: ListNotesParams, options?: RequestInit): Promise<NoteRead[]> => {
+export const listNotes = async (params?: ListNotesParams, options?: Parameters<typeof apiFetch>[1]): Promise<NoteRead[]> => {
 
-  const res = await fetch(getListNotesUrl(params),
+  return apiFetch<NoteRead[]>(getListNotesUrl(params),
   {
     ...options,
     method: 'GET'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: NoteRead[] = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -100,16 +96,16 @@ export const getListNotesQueryKey = (params?: ListNotesParams,) => {
     }
 
 
-export const getListNotesQueryOptions = <TData = Awaited<ReturnType<typeof listNotes>>, TError = HTTPValidationError>(params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, fetch?: RequestInit}
+export const getListNotesQueryOptions = <TData = Awaited<ReturnType<typeof listNotes>>, TError = HTTPValidationError>(params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListNotesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNotes>>> = ({ signal }) => listNotes(params, { signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNotes>>> = ({ signal }) => listNotes(params, { signal, ...requestOptions });
 
 
 
@@ -129,7 +125,7 @@ export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TErr
           TError,
           Awaited<ReturnType<typeof listNotes>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = HTTPValidationError>(
@@ -139,11 +135,11 @@ export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TErr
           TError,
           Awaited<ReturnType<typeof listNotes>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = HTTPValidationError>(
- params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, fetch?: RequestInit}
+ params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -151,7 +147,7 @@ export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TErr
  */
 
 export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = HTTPValidationError>(
- params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, fetch?: RequestInit}
+ params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -179,7 +175,7 @@ export const getCreateNoteUrl = () => {
  * Create a note in either notebook.
  * @summary Create Note
  */
-export const createNote = async (noteCreate: NoteCreate, options?: RequestInit): Promise<NoteRead> => {
+export const createNote = async (noteCreate: NoteCreate, options?: Parameters<typeof apiFetch>[1]): Promise<NoteRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -195,21 +191,14 @@ export const createNote = async (noteCreate: NoteCreate, options?: RequestInit):
     }
     return headers;
   };
-const res = await fetch(getCreateNoteUrl(),
+return apiFetch<NoteRead>(getCreateNoteUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(noteCreate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: NoteRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -218,15 +207,15 @@ const res = await fetch(getCreateNoteUrl(),
 export const getCreateNoteMutationKey = () => ['createNote'] as const;
 
 export const getCreateNoteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,CreateNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,CreateNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,CreateNoteMutationVariables, TContext> => {
 
 const mutationKey = getCreateNoteMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -234,7 +223,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createNote>>, CreateNoteMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  createNote(data,fetchOptions)
+          return  createNote(data,requestOptions)
         }
 
 
@@ -253,7 +242,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Create Note
  */
 export const useCreateNote = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,CreateNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,CreateNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createNote>>,
         TError,
@@ -274,23 +263,16 @@ export const useCreateNote = <TError = HTTPValidationError,
  * Fetch a single note.
  * @summary Get Note
  */
-export const getNote = async (noteId: number, options?: RequestInit): Promise<NoteRead> => {
+export const getNote = async (noteId: number, options?: Parameters<typeof apiFetch>[1]): Promise<NoteRead> => {
 
-  const res = await fetch(getGetNoteUrl(noteId),
+  return apiFetch<NoteRead>(getGetNoteUrl(noteId),
   {
     ...options,
     method: 'GET'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: NoteRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -303,16 +285,16 @@ export const getGetNoteQueryKey = (noteId: number,) => {
     }
 
 
-export const getGetNoteQueryOptions = <TData = Awaited<ReturnType<typeof getNote>>, TError = HTTPValidationError>(noteId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, fetch?: RequestInit}
+export const getGetNoteQueryOptions = <TData = Awaited<ReturnType<typeof getNote>>, TError = HTTPValidationError>(noteId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetNoteQueryKey(noteId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNote>>> = ({ signal }) => getNote(noteId, { signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNote>>> = ({ signal }) => getNote(noteId, { signal, ...requestOptions });
 
 
 
@@ -332,7 +314,7 @@ export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError =
           TError,
           Awaited<ReturnType<typeof getNote>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = HTTPValidationError>(
@@ -342,11 +324,11 @@ export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError =
           TError,
           Awaited<ReturnType<typeof getNote>>
         > , 'initialData'
-      >, fetch?: RequestInit}
+      >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = HTTPValidationError>(
- noteId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, fetch?: RequestInit}
+ noteId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -354,7 +336,7 @@ export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError =
  */
 
 export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = HTTPValidationError>(
- noteId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, fetch?: RequestInit}
+ noteId: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -383,7 +365,7 @@ export const getUpdateNoteUrl = (noteId: number,) => {
  * @summary Update Note
  */
 export const updateNote = async (noteId: number,
-    noteUpdate: NoteUpdate, options?: RequestInit): Promise<NoteRead> => {
+    noteUpdate: NoteUpdate, options?: Parameters<typeof apiFetch>[1]): Promise<NoteRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -399,21 +381,14 @@ export const updateNote = async (noteId: number,
     }
     return headers;
   };
-const res = await fetch(getUpdateNoteUrl(noteId),
+return apiFetch<NoteRead>(getUpdateNoteUrl(noteId),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(noteUpdate)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: NoteRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -422,15 +397,15 @@ const res = await fetch(getUpdateNoteUrl(noteId),
 export const getUpdateNoteMutationKey = () => ['updateNote'] as const;
 
 export const getUpdateNoteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,UpdateNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,UpdateNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,UpdateNoteMutationVariables, TContext> => {
 
 const mutationKey = getUpdateNoteMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -438,7 +413,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateNote>>, UpdateNoteMutationVariables> = (props) => {
           const {noteId,data} = props ?? {};
 
-          return  updateNote(noteId,data,fetchOptions)
+          return  updateNote(noteId,data,requestOptions)
         }
 
 
@@ -457,7 +432,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Update Note
  */
 export const useUpdateNote = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,UpdateNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,UpdateNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateNote>>,
         TError,
@@ -478,23 +453,16 @@ export const useUpdateNote = <TError = HTTPValidationError,
  * Delete a note.
  * @summary Delete Note
  */
-export const deleteNote = async (noteId: number, options?: RequestInit): Promise<void> => {
+export const deleteNote = async (noteId: number, options?: Parameters<typeof apiFetch>[1]): Promise<void> => {
 
-  const res = await fetch(getDeleteNoteUrl(noteId),
+  return apiFetch<void>(getDeleteNoteUrl(noteId),
   {
     ...options,
     method: 'DELETE'
 
 
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: void = body ? JSON.parse(body) : undefined
-  return data
-}
+);}
 
 
 
@@ -503,15 +471,15 @@ export const deleteNote = async (noteId: number, options?: RequestInit): Promise
 export const getDeleteNoteMutationKey = () => ['deleteNote'] as const;
 
 export const getDeleteNoteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,DeleteNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,DeleteNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,DeleteNoteMutationVariables, TContext> => {
 
 const mutationKey = getDeleteNoteMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -519,7 +487,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteNote>>, DeleteNoteMutationVariables> = (props) => {
           const {noteId} = props ?? {};
 
-          return  deleteNote(noteId,fetchOptions)
+          return  deleteNote(noteId,requestOptions)
         }
 
 
@@ -538,7 +506,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Delete Note
  */
 export const useDeleteNote = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,DeleteNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,DeleteNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteNote>>,
         TError,
@@ -564,7 +532,7 @@ export const useDeleteNote = <TError = HTTPValidationError,
  * @summary Classify
  */
 export const classifyNote = async (noteId: number,
-    classifyRequest: ClassifyRequest, options?: RequestInit): Promise<ClassificationRead> => {
+    classifyRequest: ClassifyRequest, options?: Parameters<typeof apiFetch>[1]): Promise<ClassificationRead> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -580,21 +548,14 @@ export const classifyNote = async (noteId: number,
     }
     return headers;
   };
-const res = await fetch(getClassifyNoteUrl(noteId),
+return apiFetch<ClassificationRead>(getClassifyNoteUrl(noteId),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(classifyRequest)
   }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: ClassificationRead = body ? JSON.parse(body) : {}
-  return data
-}
+);}
 
 
 
@@ -603,15 +564,15 @@ const res = await fetch(getClassifyNoteUrl(noteId),
 export const getClassifyNoteMutationKey = () => ['classifyNote'] as const;
 
 export const getClassifyNoteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyNote>>, TError,ClassifyNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyNote>>, TError,ClassifyNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof classifyNote>>, TError,ClassifyNoteMutationVariables, TContext> => {
 
 const mutationKey = getClassifyNoteMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -619,7 +580,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof classifyNote>>, ClassifyNoteMutationVariables> = (props) => {
           const {noteId,data} = props ?? {};
 
-          return  classifyNote(noteId,data,fetchOptions)
+          return  classifyNote(noteId,data,requestOptions)
         }
 
 
@@ -638,7 +599,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
  * @summary Classify
  */
 export const useClassifyNote = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyNote>>, TError,ClassifyNoteMutationVariables, TContext>, fetch?: RequestInit}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyNote>>, TError,ClassifyNoteMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof classifyNote>>,
         TError,

@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.deps import _classify_calls
 from app.core.config import Settings
 from app.main import create_app
 
@@ -41,3 +42,11 @@ def account(client: TestClient) -> TestClient:
     signed_in = client.post("/api/auth/login", json={"username": USERNAME, "password": PASSWORD})
     assert signed_in.status_code == 200
     return client
+
+
+@pytest.fixture(autouse=True)
+def classify_budget() -> Iterator[None]:
+    """Give every test a fresh classification quota."""
+    _classify_calls.clear()
+    yield
+    _classify_calls.clear()

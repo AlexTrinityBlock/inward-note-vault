@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useClassifyNote } from "../client/generated";
 import type { ClassificationRead, NoteRead } from "../client/generated/models";
@@ -31,6 +31,8 @@ export function ClassifyPanel({ note, secret, onApply, onClose }: ClassifyPanelP
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [useFolder, setUseFolder] = useState(false);
 
+  const startedFor = useRef<number | null>(null);
+
   const run = useCallback(
     async (consent: boolean) => {
       setStage("running");
@@ -60,11 +62,20 @@ export function ClassifyPanel({ note, secret, onApply, onClose }: ClassifyPanelP
     [classify, encrypted, note.id, secret, t],
   );
 
+  /**
+   * Ask Jev automatically for plain notes — at most once per note.
+   *
+   * `run` gets a new identity on every render, so this guards with a ref
+   * instead of trusting the dependency list: without the guard, every render
+   * would fire another request at the API.
+   */
   useEffect(() => {
-    if (!encrypted) {
-      void run(false);
+    if (encrypted || startedFor.current === note.id) {
+      return;
     }
-  }, [encrypted, run]);
+    startedFor.current = note.id;
+    void run(false);
+  }, [encrypted, note.id, run]);
 
   async function apply() {
     await onApply({
