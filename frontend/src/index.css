@@ -262,6 +262,30 @@ label.checkbox input {
   background: var(--surface-alt);
 }
 
+/* Locked encrypted notebook: the unlock prompt and nothing else. */
+.locked {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.locked-card {
+  width: min(26rem, 100%);
+  text-align: center;
+}
+
+.locked-mark {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.locked-card .hint {
+  margin-bottom: 1rem;
+}
+
 .columns {
   flex: 1;
   min-height: 0;

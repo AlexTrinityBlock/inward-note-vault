@@ -17,6 +17,7 @@ import {
 import type { NoteCreate, NoteRead } from "../client/generated/models";
 import { ClassifyPanel } from "../components/ClassifyPanel";
 import { FolderTree } from "../components/FolderTree";
+import { LockedNotebook } from "../components/LockedNotebook";
 import { NoteEditor, type NoteSavePayload } from "../components/NoteEditor";
 import { NoteList } from "../components/NoteList";
 import { TagManager } from "../components/TagManager";
@@ -50,11 +51,17 @@ export function VaultRoute() {
   // Notes already offered to Jev automatically, so a save never re-asks.
   const autoClassified = useRef<Set<number>>(new Set());
 
-  const notesQuery = useListNotes({
-    notebook: tab,
-    tag: tagFilter ?? undefined,
-    q: search.trim() === "" ? undefined : search.trim(),
-  });
+  // A locked notebook must not even ask the server for its notes: without the
+  // key there is nothing readable to show, so the request would only leak
+  // metadata and waste a round trip.
+  const notesQuery = useListNotes(
+    {
+      notebook: tab,
+      tag: tagFilter ?? undefined,
+      q: search.trim() === "" ? undefined : search.trim(),
+    },
+    { query: { enabled: tab !== "encrypted" || notebook.unlocked } },
+  );
 
   const folders = foldersQuery.data ?? [];
   const tags = tagsQuery.data ?? [];
@@ -218,19 +225,10 @@ export function VaultRoute() {
       </div>
 
       {locked ? (
-        <div className="banner">
-          <div>
-            <strong>{t("crypto.notebookTitle")}</strong>
-            <p className="muted small">{t("crypto.unlockBody")}</p>
-          </div>
-          <button type="button" className="primary" onClick={askToUnlock}>
-            {notebook.profile ? t("crypto.unlock") : t("crypto.create")}
-          </button>
-        </div>
-      ) : null}
-
-      <div className="columns">
-        <div className="sidebar">
+        <LockedNotebook hasProfile={Boolean(notebook.profile)} onUnlock={askToUnlock} />
+      ) : (
+        <div className="columns">
+          <div className="sidebar">
           <FolderTree
             folders={folders}
             selectedId={folderId}
@@ -298,12 +296,13 @@ export function VaultRoute() {
             onClassify={() => setClassifyId(selected.id)}
             onLock={notebook.lock}
           />
-        ) : (
-          <section className="panel editor empty">
-            <p className="muted">{t("notes.selectPrompt")}</p>
-          </section>
-        )}
-      </div>
+          ) : (
+            <section className="panel editor empty">
+              <p className="muted">{t("notes.selectPrompt")}</p>
+            </section>
+          )}
+        </div>
+      )}
 
       {classifyNote && !locked ? (
         <ClassifyPanel

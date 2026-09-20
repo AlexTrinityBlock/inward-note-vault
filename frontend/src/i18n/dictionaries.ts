@@ -133,6 +133,7 @@ export const en = {
     mismatch: "The passwords do not match.",
     tooShort: "Use at least 8 characters.",
     unlockedUntil: "Unlocked until you lock it or reload the page.",
+    lockedHint: "Nothing is loaded, or even requested, until you unlock it.",
     note: "Titles and bodies are encrypted. Folders and tag names stay readable so the tree and filters keep working.",
   },
   settings: {
@@ -298,6 +299,7 @@ export const zhTW: Dictionary = {
     mismatch: "兩次輸入的密碼不一致。",
     tooShort: "請至少使用 8 個字元。",
     unlockedUntil: "在你上鎖或重新載入頁面之前會維持解鎖狀態。",
+    lockedHint: "解鎖之前，伺服器上的內容不會被載入，也不會被請求。",
     note: "標題與內文會被加密；資料夾與標籤名稱仍保持可讀，樹狀結構與篩選才能運作。",
   },
   settings: {
@@ -459,6 +461,7 @@ export const zhCN: Dictionary = {
     mismatch: "两次输入的密码不一致。",
     tooShort: "请至少使用 8 个字符。",
     unlockedUntil: "在你锁定或刷新页面之前会保持解锁状态。",
+    lockedHint: "解锁之前，服务器上的内容不会被加载，也不会被请求。",
     note: "标题和正文会被加密；文件夹和标签名称仍然可读，树形结构和筛选才能工作。",
   },
   settings: {
