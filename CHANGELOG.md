@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   once per note.
 - Auto-classification ran when a note was created, spending a request on an
   empty note; it now runs once per note, after a save with content.
+- The editor kept stale tag chips and folder selection after a change made
+  elsewhere — applying Jev's suggestions updated the server but not the form.
+  It now re-syncs whenever the note's `updated_at` moves, unless a draft is
+  unsaved.
+- A rejected TypeSafe key was reported as a *missing* key. The panel now shows
+  what the server actually said: no key, the rate limit, or the upstream
+  failure with its request id.
 
 ### Added
 

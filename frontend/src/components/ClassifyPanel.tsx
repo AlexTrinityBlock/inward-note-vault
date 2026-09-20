@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useClassifyNote } from "../client/generated";
 import type { ClassificationRead, NoteRead } from "../client/generated/models";
+import { ApiError } from "../client/http";
 import { useI18n } from "../i18n";
 import type { NoteSecret } from "../lib/crypto";
 
@@ -54,8 +55,19 @@ export function ClassifyPanel({ note, secret, onApply, onClose }: ClassifyPanelP
         setUseFolder(response.folder.folder_id !== null);
         setStage("done");
       } catch (caught) {
-        const message = caught instanceof Error ? caught.message : "";
-        setError(message.includes("API key") ? t("classify.needsKey") : t("classify.failed"));
+        // Show what the server said: a bad key, a rate limit and an upstream
+        // failure need different reactions from the user.
+        if (caught instanceof ApiError) {
+          setError(
+            caught.status === 400
+              ? t("classify.needsKey")
+              : caught.status === 429
+                ? t("classify.rateLimited")
+                : caught.message,
+          );
+        } else {
+          setError(t("classify.failed"));
+        }
         setStage("done");
       }
     },

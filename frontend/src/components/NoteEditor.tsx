@@ -56,6 +56,24 @@ export function NoteEditor({
     setStatus(dirty ? t("notes.unsaved") : t("notes.saved"));
   }, [dirty, t]);
 
+  /**
+   * Re-sync with the server when the note changed behind our back — applying
+   * Jev's suggestions, for instance. `updated_at` changes on every server write,
+   * and the `dirty` guard keeps an in-progress draft from being overwritten.
+   */
+  const serverVersion = note.updated_at;
+  useEffect(() => {
+    if (dirty) {
+      return;
+    }
+    setTitle(secret ? secret.title : (note.title ?? ""));
+    setBody(secret ? secret.body : (note.body ?? ""));
+    setFolderId(note.folder_id);
+    setTags(note.tags ?? []);
+    // `secret` is derived from the encrypted payload, keyed by the same version.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverVersion, note.id, secret, dirty]);
+
   async function save() {
     setStatus(t("notes.saving"));
     try {
