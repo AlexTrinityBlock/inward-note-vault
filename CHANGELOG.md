@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The container build failed on `uv sync`: building the project's metadata needs
+  `README.md`, which the dependency layer had not copied yet. Dependencies and
+  the project are now installed in two steps.
+- The image had no trust store, so every HTTPS call to TypeSafe failed with
+  `CERTIFICATE_VERIFY_FAILED`; `ca-certificates` is now installed.
+- The development compose stack wrote a Linux `.venv` and `node_modules` into the
+  bind-mounted source trees, overwriting the host's own installs. Both now live
+  on named volumes.
 - The generated API client returned error bodies as if they were successful
   data, so `isError` never fired, a 401 flowed into components as an object, and
   the vault crashed instead of showing the sign-in screen. Every request now

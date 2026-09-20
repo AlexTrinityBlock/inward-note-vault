@@ -19,11 +19,21 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app/backend
 
-# Dependencies first, so the layer is cached across source edits.
+# The slim base has no trust store, so HTTPS calls (the TypeSafe API) fail
+# certificate verification without this.
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dependencies first, so the layer survives source edits. The project itself is
+# installed in the next step: building its metadata needs the README, which is
+# not copied yet.
 COPY backend/pyproject.toml backend/uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY backend/ ./
+RUN uv sync --frozen --no-dev
+
 # `/app/frontend/dist` is where the app looks for the built client.
 COPY --from=client /client/dist /app/frontend/dist
 

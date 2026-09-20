@@ -4,7 +4,10 @@
 #   API      http://127.0.0.1:8000   (reloads on backend edits)
 #   frontend http://127.0.0.1:5173   (proxies /api to the API container)
 #
-# The SQLite file lives on the `dev-data` volume, so it survives restarts.
+# Containers and the host share the source trees, but not their installed
+# trees: `.venv` and `node_modules` live on named volumes, so a container-side
+# `uv sync` or `bun install` (Linux binaries) never overwrites what the host
+# installed for its own platform.
 
 name: inward-note-vault-dev
 
@@ -22,6 +25,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app/backend
+      - dev-venv:/app/backend/.venv
       - ./frontend/dist:/app/frontend/dist
       - dev-data:/data
 
@@ -35,8 +39,11 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
+      - dev-node-modules:/app/node_modules
     depends_on:
       - backend
 
 volumes:
   dev-data:
+  dev-venv:
+  dev-node-modules:
