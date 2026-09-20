@@ -6,10 +6,9 @@
  */
 
 /**
- * One candidate tag with Jev's probability for it.
+ * One of the user's tags with Jev's probability for it.
  */
 export interface TagSuggestionRead {
   name: string;
   probability: number;
-  existing: boolean;
 }

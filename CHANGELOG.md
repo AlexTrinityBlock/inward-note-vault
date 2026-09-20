@@ -6,8 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Jev now chooses tags only from the vocabulary the user created. The shipped
+  twelve-tag starter list is gone, so a fresh vault asks no tag questions at all
+  instead of suggesting labels nobody asked for; the Tags panel is where the
+  vocabulary is built.
+- The Tags panel lists every tag with its note count, adds new ones, deletes
+  them, and filters the note list; the filter chips moved there from the note
+  list.
+
 ### Fixed
 
+- The verify endpoint and the settings screen only looked at the key stored in
+  the vault, so a working `TYPESAFE_API_KEY` from the environment was reported as
+  "no key" even though classification used it. Both now resolve the key the same
+  way classification does, and settings say where it came from.
 - The container build failed on `uv sync`: building the project's metadata needs
   `README.md`, which the dependency layer had not copied yet. Dependencies and
   the project are now installed in two steps.

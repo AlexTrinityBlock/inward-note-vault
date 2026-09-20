@@ -24,24 +24,6 @@ MAX_TAG_CANDIDATES = 24
 # default. The UI treats it as a starting point, not a rule.
 TAG_THRESHOLD = 0.5
 
-# Shipped vocabulary, used alongside the user's own tags so that a brand-new
-# vault can still be classified. Jev selects among candidates; code owns
-# creating them, so a suggested tag only exists once the user accepts it.
-DEFAULT_TAGS: tuple[tuple[str, str], ...] = (
-    ("Work", "Job tasks, meetings, colleagues, and work projects."),
-    ("Personal", "Private life: family, friends, home, and errands."),
-    ("Idea", "A thought worth developing later, not yet a task."),
-    ("Task", "Something the author intends to do."),
-    ("Reference", "Material kept to look up again: facts, links, documentation."),
-    ("Finance", "Money: bills, invoices, budgets, taxes, purchases."),
-    ("Health", "Medical notes, symptoms, appointments, fitness."),
-    ("Travel", "Trips, itineraries, bookings, places to visit."),
-    ("Learning", "Study notes, courses, and things being learned."),
-    ("Shopping", "Items to buy and purchase decisions."),
-    ("Recipe", "Food, cooking, and ingredients."),
-    ("Journal", "Dated reflections and diary entries."),
-)
-
 
 @dataclass(frozen=True, slots=True)
 class FolderOption:
@@ -53,16 +35,15 @@ class FolderOption:
 
 @dataclass(frozen=True, slots=True)
 class TagOption:
-    """A tag offered as a candidate. `id` is `None` for the shipped vocabulary."""
+    """One of the user's tags, offered as a candidate.
+
+    Candidates always come from the vault: Jev selects among tags the user has
+    created, and never invents one.
+    """
 
     name: str
+    id: int
     description: str | None = None
-    id: int | None = None
-
-    @property
-    def existing(self) -> bool:
-        """Whether the tag already exists in the vault."""
-        return self.id is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,11 +57,10 @@ class FolderSuggestion:
 
 @dataclass(frozen=True, slots=True)
 class TagSuggestion:
-    """How strongly Jev associates the note with one candidate tag."""
+    """How strongly Jev associates the note with one of the user's tags."""
 
     name: str
     probability: float
-    existing: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,7 +184,6 @@ async def classify_note(
         TagSuggestion(
             name=tag.name,
             probability=float(response.nouls[f"tag:{tag.name}"].noul),
-            existing=tag.existing,
         )
         for tag in tag_options
     ]

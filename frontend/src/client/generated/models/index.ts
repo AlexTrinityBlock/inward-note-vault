@@ -25,6 +25,7 @@ export * from './noteRead';
 export * from './noteReadNotebook';
 export * from './noteUpdate';
 export * from './settingsRead';
+export * from './settingsReadTypesafeSource';
 export * from './settingsUpdate';
 export * from './setupRequest';
 export * from './setupStatus';

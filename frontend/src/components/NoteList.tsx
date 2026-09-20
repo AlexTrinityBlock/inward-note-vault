@@ -1,18 +1,17 @@
-import type { NoteRead, TagRead } from "../client/generated/models";
+import type { NoteRead } from "../client/generated/models";
 import { useI18n } from "../i18n";
 import type { NoteSecret } from "../lib/crypto";
 
 type NoteListProps = {
   notes: NoteRead[];
-  tags: TagRead[];
   decrypted: Record<number, NoteSecret>;
   selectedId: number | null;
   onSelect: (noteId: number) => void;
   onCreate: () => void;
   search: string;
   onSearchChange: (value: string) => void;
+  /** Set by the Tags panel, which owns filtering. */
   tagFilter: string | null;
-  onTagFilter: (tag: string | null) => void;
   creating: boolean;
 };
 
@@ -27,7 +26,6 @@ function preview(note: NoteRead, secret: NoteSecret | undefined): string {
 /** The middle column: filters, tag chips, and the note list. */
 export function NoteList({
   notes,
-  tags,
   decrypted,
   selectedId,
   onSelect,
@@ -35,7 +33,6 @@ export function NoteList({
   search,
   onSearchChange,
   tagFilter,
-  onTagFilter,
   creating,
 }: NoteListProps) {
   const { t } = useI18n();
@@ -57,23 +54,11 @@ export function NoteList({
       />
       <p className="hint">{t("notes.searchHint")}</p>
 
-      {tags.length > 0 ? (
-        <div className="tag-filter">
-          {tags.map((tag) => (
-            <button
-              key={tag.id}
-              type="button"
-              className={`chip${tagFilter === tag.name ? " active" : ""}`}
-              onClick={() => onTagFilter(tagFilter === tag.name ? null : tag.name)}
-            >
-              {tag.name}
-              <span className="count">{tag.note_count}</span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <p className="muted small">{t("tags.empty")}</p>
-      )}
+      {tagFilter ? (
+        <p className="muted small">
+          {t("notes.filterByTag")}: <strong>{tagFilter}</strong>
+        </p>
+      ) : null}
 
       {notes.length === 0 ? (
         <p className="muted small">{t("notes.empty")}</p>

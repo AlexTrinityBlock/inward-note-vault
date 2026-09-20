@@ -9,6 +9,8 @@ import type { NoteSecret } from "../lib/crypto";
 type ClassifyPanelProps = {
   note: NoteRead;
   secret: NoteSecret | null;
+  /** How many tags the vault has: Jev can only choose among those. */
+  knownTagCount: number;
   onApply: (choice: { folderId: number | null; move: boolean; tags: string[] }) => Promise<void>;
   onClose: () => void;
 };
@@ -19,7 +21,13 @@ type ClassifyPanelProps = {
  * Encrypted notes start on a consent step: classifying them means sending the
  * decrypted text to TypeSafe, which the user has to agree to explicitly.
  */
-export function ClassifyPanel({ note, secret, onApply, onClose }: ClassifyPanelProps) {
+export function ClassifyPanel({
+  note,
+  secret,
+  knownTagCount,
+  onApply,
+  onClose,
+}: ClassifyPanelProps) {
   const { t } = useI18n();
   const classify = useClassifyNote();
   const encrypted = note.notebook === "encrypted";
@@ -150,7 +158,9 @@ export function ClassifyPanel({ note, secret, onApply, onClose }: ClassifyPanelP
           <div className="suggestion">
             <span className="label">{t("classify.tagsLabel")}</span>
             {result.tags.length === 0 ? (
-              <span className="muted">{t("classify.noTagSuggestion")}</span>
+              <span className="muted">
+                {knownTagCount === 0 ? t("classify.noCandidates") : t("classify.noTagSuggestion")}
+              </span>
             ) : (
               <div className="tag-filter">
                 {result.tags.slice(0, 12).map((tag) => {
@@ -171,7 +181,6 @@ export function ClassifyPanel({ note, secret, onApply, onClose }: ClassifyPanelP
                     >
                       {tag.name}
                       <span className="count">{Math.round(tag.probability * 100)}%</span>
-                      {tag.existing ? null : <span className="badge">{t("classify.newTag")}</span>}
                     </button>
                   );
                 })}

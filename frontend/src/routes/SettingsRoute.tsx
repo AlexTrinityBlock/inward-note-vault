@@ -22,6 +22,7 @@ export function SettingsRoute() {
   const [verifyResult, setVerifyResult] = useState<string | null>(null);
 
   const configured = settings.data?.typesafe_configured ?? false;
+  const source = settings.data?.typesafe_source ?? null;
   const model = draftModel ?? settings.data?.typesafe_model ?? "";
 
   async function submit(event: FormEvent) {
@@ -78,7 +79,11 @@ export function SettingsRoute() {
       <section className="panel">
         <h2>{t("settings.typesafe")}</h2>
         <p className="muted small">
-          {configured ? t("settings.apiKeyStored") : t("settings.apiKeyMissing")}
+          {source === "stored"
+            ? t("settings.apiKeyStored")
+            : source === "env"
+              ? t("settings.apiKeyFromEnv")
+              : t("settings.apiKeyMissing")}
         </p>
 
         <label>

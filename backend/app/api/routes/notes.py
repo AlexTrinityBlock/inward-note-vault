@@ -15,7 +15,6 @@ from typesafe_sdk import TypeSafeError
 from app import crud
 from app.api.deps import ClassifyQuota, CurrentUser, SessionDep, TypeSafeDep
 from app.core.typesafe import (
-    DEFAULT_TAGS,
     TAG_THRESHOLD,
     FolderOption,
     TagOption,
@@ -90,11 +89,10 @@ class FolderSuggestionRead(BaseModel):
 
 
 class TagSuggestionRead(BaseModel):
-    """One candidate tag with Jev's probability for it."""
+    """One of the user's tags with Jev's probability for it."""
 
     name: str
     probability: float
-    existing: bool
 
 
 class ClassificationRead(BaseModel):
@@ -305,14 +303,9 @@ async def classify(
         FolderOption(id=folder.id, path=paths[folder.id]) for folder in crud.list_folders(session)
     ]
 
-    existing_tags = crud.list_tags(session)
-    known = {tag.name.lower() for tag in existing_tags}
-    candidates = [TagOption(name=tag.name, id=tag.id) for tag in existing_tags]
-    candidates += [
-        TagOption(name=name, description=description)
-        for name, description in DEFAULT_TAGS
-        if name.lower() not in known
-    ]
+    # Candidates are the user's own tags. Jev selects from what exists; it never
+    # invents a tag, so an empty vault yields no tag questions.
+    candidates = [TagOption(name=tag.name, id=tag.id) for tag in crud.list_tags(session)]
 
     try:
         result = await classify_note(
@@ -332,11 +325,7 @@ async def classify(
             confidence=result.folder.confidence,
         ),
         tags=[
-            TagSuggestionRead(
-                name=suggestion.name,
-                probability=suggestion.probability,
-                existing=suggestion.existing,
-            )
+            TagSuggestionRead(name=suggestion.name, probability=suggestion.probability)
             for suggestion in result.tags
         ],
         tag_threshold=TAG_THRESHOLD,

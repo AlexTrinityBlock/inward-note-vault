@@ -91,6 +91,8 @@ def test_classify_returns_folder_and_ranked_tags(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
     folder = account.post("/api/folders", json={"name": "Work"}).json()
+    for name in ("Work", "Task", "Idea"):
+        account.post("/api/tags", json={"name": name})
     note = account.post(
         "/api/notes", json={"title": "Standup notes", "body": "Ship the release on Friday."}
     ).json()
@@ -102,14 +104,29 @@ def test_classify_returns_folder_and_ranked_tags(
     assert body["model"] == "jev-test"
     assert body["folder"] == {"folder_id": folder["id"], "path": "Work", "confidence": 0.91}
     assert body["asked_about_encrypted_content"] is False
-    assert [tag["name"] for tag in body["tags"]][:3] == ["Work", "Task", "Idea"]
+    # Only the user's own tags are candidates, ranked by probability.
+    assert [tag["name"] for tag in body["tags"]] == ["Work", "Task", "Idea"]
     assert body["tag_threshold"] == 0.5
+
+
+def test_classify_asks_nothing_about_tags_in_an_empty_vault(
+    account: TestClient, fake_typesafe: FakeTypeSafeClient
+) -> None:
+    """Jev selects among existing tags; it never invents one to suggest."""
+    note = account.post("/api/notes", json={"title": "Note", "body": "Body"}).json()
+
+    body = account.post(f"/api/notes/{note['id']}/classify", json={}).json()
+
+    assert body["tags"] == []
+    assert "folder" in fake_typesafe.calls[0]["questions"]
+    assert not [key for key in fake_typesafe.calls[0]["questions"] if key.startswith("tag:")]
 
 
 def test_classify_sends_one_question_per_candidate(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
     account.post("/api/folders", json={"name": "Work"})
+    account.post("/api/tags", json={"name": "Work"})
     note = account.post("/api/notes", json={"title": "Note", "body": "Body"}).json()
 
     account.post(f"/api/notes/{note['id']}/classify", json={})

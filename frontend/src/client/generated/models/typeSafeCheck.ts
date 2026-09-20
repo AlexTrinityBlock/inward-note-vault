@@ -6,7 +6,7 @@
  */
 
 /**
- * Result of validating the stored key against the TypeSafe API.
+ * Result of validating the key against the TypeSafe API.
  */
 export interface TypeSafeCheck {
   ok: boolean;

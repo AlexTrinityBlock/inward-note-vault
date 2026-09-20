@@ -4,8 +4,10 @@ import { useMemo, useRef, useState } from "react";
 import {
   useCreateFolder,
   useCreateNote,
+  useCreateTag,
   useDeleteFolder,
   useDeleteNote,
+  useDeleteTag,
   useGetSettings,
   useListFolders,
   useListNotes,
@@ -17,6 +19,7 @@ import { ClassifyPanel } from "../components/ClassifyPanel";
 import { FolderTree } from "../components/FolderTree";
 import { NoteEditor, type NoteSavePayload } from "../components/NoteEditor";
 import { NoteList } from "../components/NoteList";
+import { TagManager } from "../components/TagManager";
 import { UnlockDialog } from "../components/UnlockDialog";
 import { useDecryptedNotes } from "../hooks/useDecryptedNotes";
 import { useEncryptedNotebook } from "../hooks/useEncryptedNotebook";
@@ -74,6 +77,8 @@ export function VaultRoute() {
   const removeNote = useDeleteNote();
   const createFolder = useCreateFolder();
   const removeFolder = useDeleteFolder();
+  const createTag = useCreateTag();
+  const removeTag = useDeleteTag();
 
   const locked = tab === "encrypted" && !notebook.unlocked;
 
@@ -225,26 +230,44 @@ export function VaultRoute() {
       ) : null}
 
       <div className="columns">
-        <FolderTree
-          folders={folders}
-          selectedId={folderId}
-          onSelect={setFolderId}
-          onCreate={(name, parentId) => {
-            void createFolder.mutateAsync({ data: { name, parent_id: parentId } }).then(refresh);
-          }}
-          onDelete={(id) => {
-            void removeFolder.mutateAsync({ folderId: id }).then(() => {
-              if (folderId === id) {
-                setFolderId(null);
-              }
-              return refresh();
-            });
-          }}
-        />
+        <div className="sidebar">
+          <FolderTree
+            folders={folders}
+            selectedId={folderId}
+            onSelect={setFolderId}
+            onCreate={(name, parentId) => {
+              void createFolder.mutateAsync({ data: { name, parent_id: parentId } }).then(refresh);
+            }}
+            onDelete={(id) => {
+              void removeFolder.mutateAsync({ folderId: id }).then(() => {
+                if (folderId === id) {
+                  setFolderId(null);
+                }
+                return refresh();
+              });
+            }}
+          />
+
+          <TagManager
+            tags={tags}
+            active={tagFilter}
+            onFilter={setTagFilter}
+            onCreate={(name) => {
+              void createTag.mutateAsync({ data: { name } }).then(refresh);
+            }}
+            onDelete={(id) => {
+              void removeTag.mutateAsync({ tagId: id }).then(() => {
+                if (tagFilter && tags.find((tag) => tag.id === id)?.name === tagFilter) {
+                  setTagFilter(null);
+                }
+                return refresh();
+              });
+            }}
+          />
+        </div>
 
         <NoteList
           notes={notes}
-          tags={tags}
           decrypted={decrypted}
           selectedId={selectedId}
           onSelect={setSelectedId}
@@ -252,7 +275,6 @@ export function VaultRoute() {
           search={search}
           onSearchChange={setSearch}
           tagFilter={tagFilter}
-          onTagFilter={setTagFilter}
           creating={createNote.isPending}
         />
 
@@ -287,6 +309,7 @@ export function VaultRoute() {
         <ClassifyPanel
           note={classifyNote}
           secret={decrypted[classifyNote.id] ?? null}
+          knownTagCount={tags.length}
           onApply={(choice) => applySuggestions(classifyNote, choice)}
           onClose={() => setClassifyId(null)}
         />

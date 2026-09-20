@@ -79,6 +79,8 @@ export const en = {
   tags: {
     title: "Tags",
     empty: "No tags yet.",
+    manageHint: "Add the tags you want to sort notes by. Jev picks from this list.",
+    deleteConfirm: "Delete this tag? It is removed from every note that carries it.",
   },
   editor: {
     titlePlaceholder: "Title",
@@ -100,10 +102,10 @@ export const en = {
     failed: "Classification failed.",
     needsKey: "Add a TypeSafe API key in settings first.",
     rateLimited: "Jev has been asked too often just now. Wait a minute and try again.",
+    noCandidates: "Jev chooses among your tags, so add a few first — see the Tags panel.",
     running: "Asking Jev…",
     model: "Model",
     applied: "Suggestions applied.",
-    newTag: "new",
   },
   consent: {
     title: "Jev will see this note",
@@ -137,6 +139,7 @@ export const en = {
     apiKey: "API key",
     apiKeyStored: "A key is stored. Enter a new one to replace it.",
     apiKeyMissing: "No key stored yet.",
+    apiKeyFromEnv: "Using the TYPESAFE_API_KEY from the environment.",
     replaceKey: "Replace key",
     clearKey: "Remove key",
     model: "Model",
@@ -237,6 +240,8 @@ export const zhTW: Dictionary = {
   tags: {
     title: "標籤",
     empty: "還沒有標籤。",
+    manageHint: "新增你想用來整理筆記的標籤，Jev 會從這份清單中挑選。",
+    deleteConfirm: "要刪除這個標籤嗎？所有筆記上的這個標籤都會一併移除。",
   },
   editor: {
     titlePlaceholder: "標題",
@@ -258,10 +263,10 @@ export const zhTW: Dictionary = {
     failed: "分類失敗。",
     needsKey: "請先在設定中填入 TypeSafe API 金鑰。",
     rateLimited: "剛剛詢問 Jev 的次數太多了，請稍等一分鐘再試。",
+    noCandidates: "Jev 只會從你建立的標籤中挑選，請先在「標籤」面板新增幾個。",
     running: "正在詢問 Jev…",
     model: "模型",
     applied: "已套用建議。",
-    newTag: "新標籤",
   },
   consent: {
     title: "Jev 將會看到這則筆記",
@@ -295,6 +300,7 @@ export const zhTW: Dictionary = {
     apiKey: "API 金鑰",
     apiKeyStored: "已存放金鑰。輸入新的金鑰即可取代。",
     apiKeyMissing: "尚未存放金鑰。",
+    apiKeyFromEnv: "目前使用環境變數 TYPESAFE_API_KEY。",
     replaceKey: "取代金鑰",
     clearKey: "移除金鑰",
     model: "模型",
@@ -391,6 +397,8 @@ export const zhCN: Dictionary = {
   tags: {
     title: "标签",
     empty: "还没有标签。",
+    manageHint: "添加你想用来整理笔记的标签，Jev 会从这份清单中挑选。",
+    deleteConfirm: "要删除这个标签吗？所有笔记上的这个标签都会被移除。",
   },
   editor: {
     titlePlaceholder: "标题",
@@ -412,10 +420,10 @@ export const zhCN: Dictionary = {
     failed: "分类失败。",
     needsKey: "请先在设置中填入 TypeSafe API 密钥。",
     rateLimited: "刚刚询问 Jev 的次数太多了，请等一分钟再试。",
+    noCandidates: "Jev 只会从你创建的标签中挑选，请先在“标签”面板添加几个。",
     running: "正在询问 Jev…",
     model: "模型",
     applied: "已应用建议。",
-    newTag: "新标签",
   },
   consent: {
     title: "Jev 将会看到这条笔记",
@@ -449,6 +457,7 @@ export const zhCN: Dictionary = {
     apiKey: "API 密钥",
     apiKeyStored: "已保存密钥。输入新密钥即可替换。",
     apiKeyMissing: "尚未保存密钥。",
+    apiKeyFromEnv: "当前使用环境变量 TYPESAFE_API_KEY。",
     replaceKey: "替换密钥",
     clearKey: "移除密钥",
     model: "模型",

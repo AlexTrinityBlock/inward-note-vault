@@ -250,7 +250,11 @@ export const useUpdateSettings = <TError = HTTPValidationError,
 }
 
 /**
- * Ask TypeSafe for the model list, proving the stored key works.
+ * Ask TypeSafe for the model list, proving the key Jev would use works.
+ *
+ * A missing key never reaches this line: `TypeSafeDep` resolves the stored key
+ * and the environment fallback the same way, and answers 400 when neither
+ * exists.
  * @summary Verify Typesafe
  */
 export const verifyTypesafeKey = async ( options?: Parameters<typeof apiFetch>[1]): Promise<TypeSafeCheck> => {

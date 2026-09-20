@@ -101,8 +101,15 @@ uv run alembic revision --autogenerate -m "describe the change"
 
 Classification is one request per note: one `Choice` over the existing folders
 (always including a "nothing fits" option) plus one `Noul` per candidate tag, so
-several tags can be true at once. Candidates are the user's tags plus the
-shipped starter vocabulary in `app/core/typesafe.py`; Jev only selects, code
-creates the tags once the user accepts them. Design guidance lives in the
-TypeSafe skill at `.dsh/skills/typesafe-ai`, and the live docs at
-<https://docs.typesafe.ai> are the source of truth for API details.
+several tags can be true at once. Candidates are **the tags the user created**,
+capped at 24 — Jev selects from what exists and never invents a tag, so an empty
+vault simply produces no tag questions. The UI's Tags panel is where that
+vocabulary is built. Design guidance lives in the TypeSafe skill at
+`.dsh/skills/typesafe-ai`, and the live docs at <https://docs.typesafe.ai> are
+the source of truth for API details.
+
+The key Jev uses is the one stored in the vault, falling back to
+`TYPESAFE_API_KEY` from the environment; `GET /api/settings` reports which
+(`typesafe_source`: `stored`, `env`, or `null`). Classification is rate limited
+to `INWARD_CLASSIFY_REQUESTS_PER_MINUTE` (default 10) per account, because every
+call is a paid request.

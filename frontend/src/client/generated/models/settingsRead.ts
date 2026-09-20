@@ -4,14 +4,17 @@
  * inward-note-vault
  * OpenAPI spec version: 0.1.0
  */
+import type { SettingsReadTypesafeSource } from './settingsReadTypesafeSource';
 
 /**
  * Everything the UI needs to render the settings screen.
  *
- * The API key itself is never returned — only whether one is stored.
+ * The API key itself is never returned — only whether one is available, and
+ * where it comes from.
  */
 export interface SettingsRead {
   typesafe_configured: boolean;
+  typesafe_source: SettingsReadTypesafeSource;
   typesafe_model: string | null;
   auto_classify_enabled: boolean;
 }

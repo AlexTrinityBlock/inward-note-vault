@@ -43,12 +43,18 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 async def get_typesafe_client(
     session: SessionDep, settings: SettingsDep
 ) -> AsyncIterator[AsyncTypeSafeClient]:
-    """Yield a TypeSafe client configured with the key stored in the vault."""
+    """Yield a TypeSafe client configured with the key stored in the vault.
+
+    A key in the vault's database wins; `TYPESAFE_API_KEY` in the environment is
+    the fallback, and `GET /api/settings` reports which of the two is in use.
+    """
     api_key = crud.get_setting(session, crud.SETTING_TYPESAFE_API_KEY) or settings.typesafe_api_key
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Store a TypeSafe API key in settings before asking Jev to classify notes",
+            detail=(
+                "No TypeSafe API key is available: store one in settings, or set TYPESAFE_API_KEY"
+            ),
         )
     async with create_typesafe_client(settings, api_key=api_key) as client:
         yield client
