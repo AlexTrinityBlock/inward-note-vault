@@ -1,5 +1,6 @@
 # Private / local-only material
 private-docs/
+template/
 
 # Secrets and local environment
 .env
