@@ -16,5 +16,5 @@ export interface NoteCreate {
   ciphertext?: string | null;
   iv?: string | null;
   folder_id?: number | null;
-  tags?: string[];
+  categories?: string[];
 }

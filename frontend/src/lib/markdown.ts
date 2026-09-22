@@ -1,0 +1,77 @@
+/**
+ * Markdown rendering, in one place.
+ *
+ * The preview pane and the file cards both need rendered Markdown, and both
+ * need it sanitized: note bodies are user input, and a note can arrive from
+ * anywhere the API is reachable. Centralizing it keeps the two call sites from
+ * drifting apart — a card that forgot to sanitize would be an XSS hole.
+ */
+import DOMPurify from "dompurify";
+import { marked } from "marked";
+
+/** Render Markdown to sanitized HTML. */
+export function renderMarkdown(source: string): string {
+  return DOMPurify.sanitize(marked.parse(source, { async: false }) as string);
+}
+
+/**
+ * Strip Markdown down to readable words.
+ *
+ * Shared by the card snippet and by search, which is why it does not truncate:
+ * a query has to be able to match text anywhere in the note, not only in the
+ * part a card happens to show.
+ */
+export function stripMarkdown(source: string): string {
+  return (
+    source
+      // Fenced code blocks, then their backticks, then inline code ticks.
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/~~~[\s\S]*?~~~/g, " ")
+      .replace(/`([^`]*)`/g, "$1")
+      // Images and links collapse to their alt text or label.
+      .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      // Headings, quotes, list bullets and task boxes.
+      .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+      .replace(/^\s{0,3}>\s?/gm, "")
+      .replace(/^\s{0,3}[-*+]\s+(?:\[[ xX]\]\s*)?/gm, "")
+      .replace(/^\s{0,3}\d+[.)]\s+/gm, "")
+      // Horizontal rules and emphasis markers.
+      .replace(/^\s{0,3}([-*_])\s*(?:\1\s*){2,}$/gm, " ")
+      .replace(/(\*\*|__|\*|_|~~)/g, "")
+      // HTML tags, then the table pipes that survive the passes above.
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\|/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+/**
+ * A one-line plain-text preview of a note body, for list and card views.
+ *
+ * Markdown syntax is stripped rather than rendered: a card wants the words, not
+ * the structure, and it must not inject HTML at all.
+ */
+export function markdownSnippet(source: string, limit = 120): string {
+  const plain = stripMarkdown(source);
+  return plain.length <= limit ? plain : `${plain.slice(0, limit).trimEnd()}…`;
+}
+
+/**
+ * Does a note match a search query?
+ *
+ * Used for the encrypted notebook, whose search can only run in the browser:
+ * the server holds ciphertext and cannot index it. Matching is case-insensitive
+ * and covers the whole note, not just the part a card would show.
+ */
+export function matchesQuery(query: string, note: { title: string; body: string }): boolean {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") {
+    return true;
+  }
+  return (
+    note.title.toLowerCase().includes(needle) ||
+    stripMarkdown(note.body).toLowerCase().includes(needle)
+  );
+}

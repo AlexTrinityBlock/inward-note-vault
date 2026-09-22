@@ -17,7 +17,7 @@ export interface NoteRead {
   ciphertext: string | null;
   iv: string | null;
   folder_id: number | null;
-  tags: string[];
+  categories: string[];
   created_at: string;
   updated_at: string;
 }

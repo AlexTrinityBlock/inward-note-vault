@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { buildFolderTree, folderSubtreeIds } from "./folders";
+import { buildFolderTree, folderSubtreeIds, folderTrail } from "./folders";
 import type { FolderRead } from "../client/generated/models";
 
 function folder(id: number, name: string, parentId: number | null): FolderRead {
@@ -38,4 +38,23 @@ test("treats a folder whose parent is missing as a root", () => {
 test("collects a folder's whole subtree", () => {
   expect(folderSubtreeIds(FOLDERS, 1).sort()).toEqual([1, 2, 3]);
   expect(folderSubtreeIds(FOLDERS, 4)).toEqual([4]);
+});
+
+test("builds the ancestor trail from the root down", () => {
+  expect(folderTrail(FOLDERS, 3).map((node) => node.name)).toEqual(["Work", "Clients", "Acme"]);
+  expect(folderTrail(FOLDERS, 1).map((node) => node.name)).toEqual(["Work"]);
+});
+
+test("a trail stops instead of looping when parents form a cycle", () => {
+  const a = folder(10, "A", 11);
+  const b = folder(11, "B", 10);
+
+  const trail = folderTrail([a, b], 10);
+
+  // Both are reachable, and the walk terminates rather than repeating forever.
+  expect(trail.map((node) => node.name)).toEqual(["B", "A"]);
+});
+
+test("a trail for an unknown folder is empty", () => {
+  expect(folderTrail(FOLDERS, 404)).toEqual([]);
 });

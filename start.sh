@@ -1,8 +1,11 @@
 #!/usr/bin/env sh
-# Build the web client if needed, prepare the environment, and serve the vault.
+# Prepare the environment and serve the vault.
 #
 #   ./start.sh
 #   ./start.sh --port 9000 --reload
+#
+# The built client is committed, so this needs nothing but `uv`. Bun is only
+# required by someone editing the frontend.
 #
 # Secrets are read from `.env` (or `backend/.env`), and the database lives in
 # `backend/data/vault.db` unless INWARD_DATA_DIR says otherwise.
@@ -16,16 +19,14 @@ if ! command -v uv >/dev/null 2>&1; then
     exit 1
 fi
 
+# The bundle ships with the repository, so this only trips on a partial checkout
+# or after someone deleted it while working on the frontend.
 if [ ! -f frontend/dist/index.html ]; then
-    if command -v bun >/dev/null 2>&1; then
-        echo 'Building the web client (first run only)...'
-        (cd frontend && bun install && bun run build)
-    else
-        echo "The web client is not built and 'bun' is not installed." >&2
-        echo 'Install Bun from https://bun.sh, then run:' >&2
-        echo '    cd frontend && bun install && bun run build' >&2
-        exit 1
-    fi
+    echo "The web client is missing from 'frontend/dist'." >&2
+    echo "It is committed, so try 'git checkout -- frontend/dist' first." >&2
+    echo 'To rebuild it after changing the frontend, install Bun from https://bun.sh:' >&2
+    echo '    cd frontend && bun install && bun run build' >&2
+    exit 1
 fi
 
 # Report the port the server will actually use, so `--port 9000` is not

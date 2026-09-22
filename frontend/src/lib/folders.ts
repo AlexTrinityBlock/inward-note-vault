@@ -46,3 +46,24 @@ export function folderSubtreeIds(folders: FolderRead[], folderId: number): numbe
   }
   return collected;
 }
+
+/**
+ * The ancestor chain from the root down to `folderId`, inclusive.
+ *
+ * This is what a breadcrumb renders. A folder whose `parent_id` points at an id
+ * that is not in the list is treated as a root, the same way `buildFolderTree`
+ * treats it, so one dangling reference cannot produce an endless walk.
+ */
+export function folderTrail(folders: FolderRead[], folderId: number): FolderRead[] {
+  const byId = new Map(folders.map((folder) => [folder.id, folder]));
+  const trail: FolderRead[] = [];
+  const seen = new Set<number>();
+
+  let current = byId.get(folderId);
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    trail.unshift(current);
+    current = current.parent_id === null ? undefined : byId.get(current.parent_id);
+  }
+  return trail;
+}

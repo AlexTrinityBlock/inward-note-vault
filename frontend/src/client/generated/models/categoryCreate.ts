@@ -6,9 +6,9 @@
  */
 
 /**
- * Payload for creating a tag.
+ * Payload for creating a category.
  */
-export interface TagCreate {
+export interface CategoryCreate {
   /**
      * @minLength 1
      * @maxLength 50

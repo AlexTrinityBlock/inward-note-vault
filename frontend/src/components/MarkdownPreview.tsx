@@ -1,13 +1,16 @@
-import DOMPurify from "dompurify";
-import { marked } from "marked";
 import { useMemo } from "react";
 
-/** Render Markdown, sanitized, for the right-hand preview pane. */
-export function MarkdownPreview({ source }: { source: string }) {
-  const html = useMemo(
-    () => DOMPurify.sanitize(marked.parse(source, { async: false }) as string),
-    [source],
-  );
+import { renderMarkdown } from "../lib/markdown";
 
-  return <div className="markdown" dangerouslySetInnerHTML={{ __html: html }} />;
+/**
+ * Rendered Markdown for the reading pane.
+ *
+ * Both the parsing and the sanitizing live in `lib/markdown.ts`, so this
+ * component and the file-card snippets cannot disagree about how a note body is
+ * treated.
+ */
+export function MarkdownPreview({ source }: { source: string }) {
+  const html = useMemo(() => renderMarkdown(source), [source]);
+
+  return <div className="markdown-body" dangerouslySetInnerHTML={{ __html: html }} />;
 }

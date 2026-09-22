@@ -1,15 +1,11 @@
 # syntax=docker/dockerfile:1
 
-# --- client: build the SPA -------------------------------------------------
-FROM oven/bun:1-alpine AS client
-
-WORKDIR /client
-COPY frontend/package.json frontend/bun.lock ./
-RUN bun install --frozen-lockfile
-COPY frontend/ ./
-RUN bun run build
-
 # --- runtime: the API serves the client ------------------------------------
+#
+# There is no client build stage: `frontend/dist` is committed, so the image
+# needs no Node toolchain and the container serves exactly what the repository
+# holds. After changing the frontend, run `cd frontend && bun run build` and
+# commit the result before building the image.
 FROM ghcr.io/astral-sh/uv:bookworm-slim AS runtime
 
 ENV UV_COMPILE_BYTECODE=1 \
@@ -35,7 +31,7 @@ COPY backend/ ./
 RUN uv sync --frozen --no-dev
 
 # `/app/frontend/dist` is where the app looks for the built client.
-COPY --from=client /client/dist /app/frontend/dist
+COPY frontend/dist /app/frontend/dist
 
 RUN mkdir -p /data
 VOLUME ["/data"]

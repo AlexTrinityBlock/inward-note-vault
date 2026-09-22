@@ -6,9 +6,10 @@
  */
 
 /**
- * One of the user's tags with Jev's probability for it.
+ * A category and how many notes carry it.
  */
-export interface TagSuggestionRead {
+export interface CategoryRead {
+  id: number;
   name: string;
-  probability: number;
+  note_count: number;
 }

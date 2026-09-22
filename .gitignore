@@ -2,6 +2,12 @@
 private-docs/
 template/
 
+# Agent workspace (skills and local tool state, not part of the app)
+.dsh/
+
+# Scratch directories used while verifying a change
+.tmp*/
+
 # Secrets and local environment
 .env
 .env.*
@@ -23,8 +29,16 @@ dist/
 
 # Node / frontend
 node_modules/
-frontend/dist/
 *.tsbuildinfo
+
+# `frontend/dist/` is deliberately NOT ignored, so the rule above needs an
+# exception for it: the built client is committed, and installing the vault then
+# needs only `uv`. The launchers and the image both serve the bundle exactly as
+# it is checked out, and Bun is required only by someone editing the frontend.
+# After changing anything under `frontend/src`, run `bun run build` there and
+# commit the result, or the served client will not match the source.
+!frontend/dist/
+!frontend/dist/**
 
 # Local database
 backend/data/

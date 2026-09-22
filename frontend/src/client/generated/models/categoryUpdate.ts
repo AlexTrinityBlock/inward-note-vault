@@ -6,10 +6,12 @@
  */
 
 /**
- * A tag and how many notes carry it.
+ * Payload for renaming a category.
  */
-export interface TagRead {
-  id: number;
+export interface CategoryUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
   name: string;
-  note_count: number;
 }

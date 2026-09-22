@@ -36,7 +36,12 @@ export type TranslationKey = {
 type I18nValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: TranslationKey) => string;
+  /**
+   * Look up a dotted key. `vars` fills `{name}` placeholders, which is how
+   * counts are phrased — word order differs enough between the three languages
+   * that concatenating a number onto a string does not survive translation.
+   */
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
   labels: Record<Locale, string>;
 };
 
@@ -75,9 +80,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       locale,
       setLocale,
       labels: LOCALE_LABELS,
-      t: (key: TranslationKey) => {
+      t: (key: TranslationKey, vars?: Record<string, string | number>) => {
         const [section, entry] = key.split(".") as [keyof Dictionary, string];
-        return dictionary[section][entry as never] ?? key;
+        // The dictionary is `as const`, so this is a literal union; widening to
+        // `string` is what allows the placeholder pass below.
+        const template: string = dictionary[section][entry as never] ?? key;
+        if (!vars) {
+          return template;
+        }
+        return template.replace(/\{(\w+)\}/g, (match: string, name: string) =>
+          name in vars ? String(vars[name]) : match,
+        );
       },
     };
   }, [locale, setLocale]);

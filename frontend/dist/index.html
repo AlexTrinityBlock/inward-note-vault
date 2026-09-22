@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inward Note Vault</title>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <!--
+      Geist and Geist Mono, loaded the way the design does. These are an external
+      dependency: an offline install simply falls through to the fallback chain in
+      `tokens.css`, which keeps a CJK face ahead of the generic families because
+      Geist has no Han glyphs.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Resolve the theme before the first paint so a dark-mode reader never
+      // sees a white flash. Kept inline and dependency-free on purpose.
+      (function () {
+        try {
+          var stored = localStorage.getItem("inward.theme");
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.dataset.theme = theme;
+        } catch (error) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-DpAU6J_q.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CptZvBri.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

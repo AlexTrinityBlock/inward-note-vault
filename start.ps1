@@ -1,14 +1,17 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Build the web client if needed, prepare the environment, and serve the vault.
+    Prepare the environment and serve the vault.
 
 .DESCRIPTION
     The bare-metal path in one step:
       1. fails fast when `uv` is missing,
-      2. builds `frontend/dist` with Bun when the client has not been built yet,
+      2. checks that the web client is present,
       3. syncs the backend environment,
       4. serves the API and the client on http://127.0.0.1:8000.
+
+    The built client is committed, so this needs nothing but `uv`. Bun is only
+    required by someone editing the frontend.
 
     Secrets are read from `.env` (or `backend/.env`), and the database lives in
     `backend/data/vault.db` unless INWARD_DATA_DIR says otherwise.
@@ -37,27 +40,15 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     Stop-WithMessage "'uv' is not installed. Get it from https://docs.astral.sh/uv/ and run this again."
 }
 
+# The bundle ships with the repository, so this only trips on a partial checkout
+# or after someone deleted it while working on the frontend.
 if (-not (Test-Path 'frontend/dist/index.html')) {
-    if (Get-Command bun -ErrorAction SilentlyContinue) {
-        Write-Host 'Building the web client (first run only)...' -ForegroundColor Cyan
-        Push-Location 'frontend'
-        try {
-            bun install
-            if ($LASTEXITCODE -ne 0) { Stop-WithMessage 'bun install failed.' }
-            bun run build
-            if ($LASTEXITCODE -ne 0) { Stop-WithMessage 'bun run build failed.' }
-        }
-        finally {
-            Pop-Location
-        }
-    }
-    else {
-        Stop-WithMessage @"
-The web client is not built and 'bun' is not installed.
-Install Bun from https://bun.sh, then run:
+    Stop-WithMessage @"
+The web client is missing from 'frontend/dist'.
+It is committed, so try 'git checkout -- frontend/dist' first.
+To rebuild it after changing the frontend, install Bun from https://bun.sh:
     cd frontend; bun install; bun run build
 "@
-    }
 }
 
 # Report the port the server will actually use, so `--port 9000` is not

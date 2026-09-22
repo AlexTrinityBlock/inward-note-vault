@@ -3,9 +3,17 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 
+import { DialogProvider } from "./components/Dialog";
+import { ToastProvider } from "./components/Toast";
 import { I18nProvider } from "./i18n";
 import { router } from "./routes/router";
-import "./index.css";
+
+import "./styles/tokens.css";
+import "./styles/base.css";
+import "./styles/layout.css";
+import "./styles/components.css";
+import "./styles/utilities.css";
+import "./styles/migration.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +35,11 @@ createRoot(rootElement).render(
   <StrictMode>
     <I18nProvider>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <ToastProvider>
+          <DialogProvider>
+            <RouterProvider router={router} />
+          </DialogProvider>
+        </ToastProvider>
       </QueryClientProvider>
     </I18nProvider>
   </StrictMode>,

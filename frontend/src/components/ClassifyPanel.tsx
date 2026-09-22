@@ -5,26 +5,33 @@ import type { ClassificationRead, NoteRead } from "../client/generated/models";
 import { ApiError } from "../client/http";
 import { useI18n } from "../i18n";
 import type { NoteSecret } from "../lib/crypto";
+import { Icon } from "./Icon";
 
 type ClassifyPanelProps = {
   note: NoteRead;
   secret: NoteSecret | null;
-  /** How many tags the vault has: Jev can only choose among those. */
-  knownTagCount: number;
-  onApply: (choice: { folderId: number | null; move: boolean; tags: string[] }) => Promise<void>;
+  /** How many categories the vault has: Jev can only choose among those. */
+  knownCategoryCount: number;
+  onApply: (choice: {
+    folderId: number | null;
+    move: boolean;
+    categories: string[];
+  }) => Promise<void>;
   onClose: () => void;
 };
 
 /**
- * Jev's suggestions for one note.
+ * Jev's suggestions for one note, as the design's `#classify-modal`.
  *
- * Encrypted notes start on a consent step: classifying them means sending the
- * decrypted text to TypeSafe, which the user has to agree to explicitly.
+ * Encrypted notes start on a consent step and stay there until the reader
+ * agrees. That step is a privacy mechanism, not decoration: classifying an
+ * encrypted note means sending its decrypted text to TypeSafe, so it must not
+ * be skipped, defaulted past, or removed when this component is restyled.
  */
 export function ClassifyPanel({
   note,
   secret,
-  knownTagCount,
+  knownCategoryCount,
   onApply,
   onClose,
 }: ClassifyPanelProps) {
@@ -37,7 +44,7 @@ export function ClassifyPanel({
   );
   const [result, setResult] = useState<ClassificationRead | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [useFolder, setUseFolder] = useState(false);
 
   const startedFor = useRef<number | null>(null);
@@ -55,16 +62,16 @@ export function ClassifyPanel({
           },
         });
         setResult(response);
-        setSelectedTags(
-          response.tags
-            .filter((tag) => tag.probability >= response.tag_threshold)
-            .map((tag) => tag.name),
+        setSelectedCategories(
+          response.categories
+            .filter((category) => category.probability >= response.category_threshold)
+            .map((category) => category.name),
         );
         setUseFolder(response.folder.folder_id !== null);
         setStage("done");
       } catch (caught) {
         // Show what the server said: a bad key, a rate limit and an upstream
-        // failure need different reactions from the user.
+        // failure need different reactions from the reader.
         if (caught instanceof ApiError) {
           setError(
             caught.status === 400
@@ -85,9 +92,9 @@ export function ClassifyPanel({
   /**
    * Ask Jev automatically for plain notes — at most once per note.
    *
-   * `run` gets a new identity on every render, so this guards with a ref
-   * instead of trusting the dependency list: without the guard, every render
-   * would fire another request at the API.
+   * `run` gets a new identity on every render, so this guards with a ref rather
+   * than trusting the dependency list: without the guard, every render would
+   * fire another request at the API.
    */
   useEffect(() => {
     if (encrypted || startedFor.current === note.id) {
@@ -97,124 +104,174 @@ export function ClassifyPanel({
     void run(false);
   }, [encrypted, note.id, run]);
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   async function apply() {
     await onApply({
       folderId: useFolder ? (result?.folder.folder_id ?? null) : null,
       move: useFolder && result?.folder.folder_id !== null,
-      tags: selectedTags,
+      categories: selectedCategories,
     });
     onClose();
   }
 
   return (
-    <aside className="classify-panel">
-      <div className="panel-header">
-        <h3>{t("classify.title")}</h3>
-        <button type="button" className="ghost" onClick={onClose}>
-          {t("common.close")}
-        </button>
-      </div>
-
-      {stage === "consent" ? (
-        <div className="consent">
-          <h4>⚠️ {t("consent.title")}</h4>
-          <p>{t("consent.body")}</p>
-          <div className="row">
-            <button type="button" className="primary" onClick={() => void run(true)}>
-              {t("consent.confirm")}
-            </button>
-            <button type="button" onClick={onClose}>
-              {t("consent.cancel")}
-            </button>
+    <div
+      className="modal-overlay"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="modal-card classify-modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="classify-title"
+      >
+        <div className="modal-header">
+          <div className="modal-title" id="classify-title">
+            <Icon name="sparkles" size={18} />
+            <span>{t("classify.title")}</span>
           </div>
+          <button
+            type="button"
+            className="icon-btn ghost"
+            title={t("common.close")}
+            aria-label={t("common.close")}
+            onClick={onClose}
+          >
+            <Icon name="close" size={14} />
+          </button>
         </div>
-      ) : null}
 
-      {stage === "running" ? <p className="muted">{t("classify.running")}</p> : null}
-
-      {stage === "done" && error ? <p className="error">{error}</p> : null}
-
-      {stage === "done" && result ? (
-        <div className="suggestions">
-          <div className="suggestion">
-            <span className="label">{t("classify.folderLabel")}</span>
-            {result.folder.folder_id !== null ? (
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={useFolder}
-                  onChange={(event) => setUseFolder(event.target.checked)}
-                />
-                {result.folder.path}
-                <span className="muted small">
-                  {Math.round(result.folder.confidence * 100)}% {t("classify.confidence")}
-                </span>
-              </label>
-            ) : (
-              <span className="muted">{t("classify.noFolderSuggestion")}</span>
-            )}
-          </div>
-
-          <div className="suggestion">
-            <span className="label">{t("classify.tagsLabel")}</span>
-            {result.tags.length === 0 ? (
-              <span className="muted">
-                {knownTagCount === 0 ? t("classify.noCandidates") : t("classify.noTagSuggestion")}
-              </span>
-            ) : (
-              <div className="tag-filter">
-                {result.tags.slice(0, 12).map((tag) => {
-                  const selected = selectedTags.includes(tag.name);
-                  const strong = tag.probability >= result.tag_threshold;
-                  return (
-                    <button
-                      key={tag.name}
-                      type="button"
-                      className={`chip${selected ? " active" : ""}${strong ? "" : " weak"}`}
-                      onClick={() =>
-                        setSelectedTags((current) =>
-                          current.includes(tag.name)
-                            ? current.filter((name) => name !== tag.name)
-                            : [...current, tag.name],
-                        )
-                      }
-                    >
-                      {tag.name}
-                      <span className="count">{Math.round(tag.probability * 100)}%</span>
-                    </button>
-                  );
-                })}
+        <div className="modal-body">
+          {stage === "consent" ? (
+            <section className="consent">
+              <h4>
+                <Icon name="alert" size={16} />
+                <span>{t("consent.title")}</span>
+              </h4>
+              <p>{t("consent.body")}</p>
+              <div className="row modal-inline-actions">
+                <button type="button" className="primary" onClick={() => void run(true)}>
+                  {t("consent.confirm")}
+                </button>
+                <button type="button" className="ghost" onClick={onClose}>
+                  {t("consent.cancel")}
+                </button>
               </div>
-            )}
-          </div>
-
-          <p className="muted small">
-            {result.samples > 1
-              ? `${t("classify.sampled")} ${result.samples} × ${Math.round(
-                  result.characters / result.samples,
-                )} ${t("classify.characters")}`
-              : null}
-            {result.samples_failed > 0
-              ? ` ${result.samples_failed} ${t("classify.samplesFailed")}`
-              : null}
-          </p>
-
-          {result.model ? (
-            <p className="muted small">
-              {t("classify.model")}: {result.model}
-            </p>
+            </section>
           ) : null}
 
-          <div className="row">
+          {stage === "running" ? <p className="muted">{t("classify.running")}</p> : null}
+
+          {stage === "done" && error ? <p className="error">{error}</p> : null}
+
+          {stage === "done" && result ? (
+            <>
+              <p className="modal-intro">{t("classify.intro")}</p>
+
+              <div className="suggested-item">
+                <label className="suggested-folder">
+                  <input
+                    type="checkbox"
+                    checked={useFolder}
+                    disabled={result.folder.folder_id === null}
+                    onChange={(event) => setUseFolder(event.target.checked)}
+                  />
+                  <span>{t("classify.folderLabel")}</span>
+                </label>
+                <span className="suggested-folder-name">
+                  {result.folder.folder_id !== null
+                    ? `${result.folder.path} · ${Math.round(result.folder.confidence * 100)}%`
+                    : t("classify.noFolderSuggestion")}
+                </span>
+              </div>
+
+              <div className="suggestion">
+                <span className="suggestion-label">{t("classify.categoriesLabel")}</span>
+                {result.categories.length === 0 ? (
+                  <span className="muted">
+                    {knownCategoryCount === 0
+                      ? t("classify.noCandidates")
+                      : t("classify.noCategorySuggestion")}
+                  </span>
+                ) : (
+                  <ul className="meter-list">
+                    {result.categories.slice(0, 12).map((category) => {
+                      const selected = selectedCategories.includes(category.name);
+                      const probability = Math.round(category.probability * 100);
+                      return (
+                        <li key={category.name}>
+                          <button
+                            type="button"
+                            className={`meter-row${selected ? " selected" : ""}`}
+                            aria-pressed={selected}
+                            onClick={() =>
+                              setSelectedCategories((current) =>
+                                current.includes(category.name)
+                                  ? current.filter((name) => name !== category.name)
+                                  : [...current, category.name],
+                              )
+                            }
+                          >
+                            <span className="meter-head">
+                              <span className="meter-name">{category.name}</span>
+                              <span className="meter-value">{probability}%</span>
+                            </span>
+                            <span className="meter-track" aria-hidden="true">
+                              <span className="meter-fill" style={{ width: `${probability}%` }} />
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+
+              <p className="muted small">
+                {result.samples > 1
+                  ? `${t("classify.sampled")} ${result.samples} × ${Math.round(
+                      result.characters / result.samples,
+                    )} ${t("classify.characters")}`
+                  : null}
+                {result.samples_failed > 0
+                  ? ` ${result.samples_failed} ${t("classify.samplesFailed")}`
+                  : null}
+              </p>
+
+              {result.model ? (
+                <p className="muted small">
+                  {t("classify.model")}: {result.model}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+        </div>
+
+        {stage === "done" && result ? (
+          <div className="modal-footer">
+            <button type="button" className="ghost" onClick={onClose}>
+              {t("classify.dismiss")}
+            </button>
             <button type="button" className="primary" onClick={() => void apply()}>
               {t("classify.applyAll")}
             </button>
-            <button type="button" onClick={onClose}>
-              {t("classify.dismiss")}
-            </button>
           </div>
-        </div>
-      ) : null}
-    </aside>
+        ) : null}
+      </div>
+    </div>
   );
 }

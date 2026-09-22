@@ -71,7 +71,7 @@ export const getListNotesUrl = (params?: ListNotesParams,) => {
 }
 
 /**
- * List notes, newest first, with optional notebook/folder/tag/search filters.
+ * List notes, newest first, with optional notebook/folder/category/search filters.
  * @summary List Notes
  */
 export const listNotes = async (params?: ListNotesParams, options?: Parameters<typeof apiFetch>[1]): Promise<NoteRead[]> => {
@@ -361,7 +361,7 @@ export const getUpdateNoteUrl = (noteId: number,) => {
 }
 
 /**
- * Update a note, its folder, or its tags.
+ * Update a note, its folder, or its categories.
  * @summary Update Note
  */
 export const updateNote = async (noteId: number,
@@ -524,7 +524,7 @@ export const useDeleteNote = <TError = HTTPValidationError,
 }
 
 /**
- * Ask Jev where a note belongs: one folder, plus candidate tags.
+ * Ask Jev where a note belongs: one folder, plus candidate categories.
  *
  * Text longer than one window is sampled window by window and averaged. An
  * encrypted note is only sent after the caller confirms (`consent`) that

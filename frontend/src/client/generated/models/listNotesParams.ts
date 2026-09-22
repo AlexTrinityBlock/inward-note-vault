@@ -9,7 +9,7 @@ import type { ListNotesNotebook } from './listNotesNotebook';
 export type ListNotesParams = {
 notebook?: ListNotesNotebook;
 folder_id?: number | null;
-tag?: string | null;
+category?: string | null;
 /**
  * Search plain notes; encrypted notes cannot be searched server-side
  */

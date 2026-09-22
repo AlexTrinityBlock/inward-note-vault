@@ -4,8 +4,8 @@
  * inward-note-vault
  * OpenAPI spec version: 0.1.0
  */
+import type { CategorySuggestionRead } from './categorySuggestionRead';
 import type { FolderSuggestionRead } from './folderSuggestionRead';
-import type { TagSuggestionRead } from './tagSuggestionRead';
 
 /**
  * Suggestions from one Jev run. The user accepts or ignores them.
@@ -13,8 +13,8 @@ import type { TagSuggestionRead } from './tagSuggestionRead';
 export interface ClassificationRead {
   model: string | null;
   folder: FolderSuggestionRead;
-  tags: TagSuggestionRead[];
-  tag_threshold: number;
+  categories: CategorySuggestionRead[];
+  category_threshold: number;
   asked_about_encrypted_content: boolean;
   samples: number;
   samples_failed: number;

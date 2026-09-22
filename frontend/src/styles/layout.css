@@ -1,0 +1,919 @@
+/* ==========================================================================
+   layout.css - app shell, portal screen, drive screen, workspace screen,
+   the mobile drawer and every @media breakpoint. Layout rules only: rules
+   that style a component live in components.css.
+   Ported from template/frontend/styles.css.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. PORTAL SCREEN (Vercel Mesh Gradient Hero & Polarity-Flipped Cards)
+   ========================================================================== */
+
+.portal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--canvas-soft);
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Top Nav */
+.portal-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--canvas);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.portal-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.4px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand-icon-large {
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .brand-icon-large {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--ink);
+}
+
+/* Hero Body with Vercel Multi-Color Mesh Gradient */
+.portal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+}
+
+/* The Signature Vercel Multi-Color Mesh Gradient Backdrop */
+.portal-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1000px, 100vw);
+  height: 480px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 10%, rgba(121, 40, 202, 0.12), transparent 60%),
+    radial-gradient(ellipse at 25% 15%, rgba(0, 124, 240, 0.14), transparent 50%),
+    radial-gradient(ellipse at 75% 18%, rgba(255, 0, 128, 0.11), transparent 50%),
+    radial-gradient(ellipse at 50% 30%, rgba(0, 223, 216, 0.08), transparent 45%);
+  filter: blur(40px);
+  z-index: 0;
+}
+
+[data-theme="dark"] .portal-body::before {
+  background:
+    radial-gradient(ellipse at 50% 10%, rgba(121, 40, 202, 0.22), transparent 60%),
+    radial-gradient(ellipse at 25% 15%, rgba(0, 124, 240, 0.24), transparent 50%),
+    radial-gradient(ellipse at 75% 18%, rgba(255, 0, 128, 0.18), transparent 50%),
+    radial-gradient(ellipse at 50% 30%, rgba(0, 223, 216, 0.14), transparent 45%);
+}
+
+.portal-hero {
+  text-align: center;
+  margin-bottom: 48px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--mute);
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+.portal-title {
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 48px;
+  letter-spacing: -2.4px;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.portal-subtitle {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+  color: var(--body);
+}
+
+/* Minimal 2-Up Cards Grid */
+.portal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 680px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Base Card Style */
+.portal-card {
+  border-radius: var(--radius-lg);
+  padding: 40px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: space-between;
+  gap: 36px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-level-2);
+}
+
+/* Portal Cards: Clean Stark Canvas Surfaces with Hairline Borders */
+.portal-card.plain,
+.portal-card.encrypted {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+}
+
+.portal-card.plain:hover,
+.portal-card.encrypted:hover {
+  box-shadow: var(--shadow-level-4);
+  transform: translateY(-4px);
+  border-color: var(--hairline-strong);
+}
+
+.card-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.card-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #171717;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .card-icon-wrapper {
+  background: #1f1f1f;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.card-title-group h3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.6px;
+  margin: 0;
+}
+
+.card-bottom {
+  width: 100%;
+}
+
+/* Vercel 100px Pill CTA Buttons */
+.card-action-btn {
+  width: 100%;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 1px solid var(--primary);
+}
+
+.card-action-btn:hover {
+  background: #000000;
+}
+
+[data-theme="dark"] .card-action-btn:hover {
+  background: #eaeaea;
+}
+
+.portal-footer {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--mute);
+  padding: 24px;
+  border-top: 1px solid var(--hairline);
+}
+
+/* ==========================================================================
+   2. GOOGLE DRIVE-INSPIRED VAULT BROWSER LAYOUT
+   ========================================================================== */
+
+.drive-app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* Top Navigation Bar */
+.drive-top-header {
+  height: 64px;
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  background: var(--canvas);
+  flex-shrink: 0;
+  z-index: 20;
+  gap: 16px;
+}
+
+.drive-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.drive-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drive-brand-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+/* Google Drive Signature Centered Search Bar */
+.drive-header-center {
+  flex: 1;
+  max-width: 680px;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.drive-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* 2-Column App Layout */
+.drive-layout {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+/* Left Sidebar (Google Drive Navigation) */
+.drive-sidebar {
+  width: 256px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--hairline);
+  background: var(--canvas);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  overflow-y: auto;
+  user-select: text;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, border-color 0.2s ease;
+}
+
+/* Collapsible Sidebar on Desktop (RWD) */
+.drive-sidebar.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 20px 0 !important;
+  border-right: 1px solid transparent !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Sidebar Action Header & New Note */
+.sidebar-action-header {
+  margin-bottom: 24px;
+}
+
+/* Category Edit Page Styles */
+.category-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.category-notes-section {
+  width: 100%;
+}
+
+.category-notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* Main Drive Canvas Area */
+.drive-main-canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  overflow-y: auto;
+  padding: 20px 32px 80px;
+}
+
+.drive-canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.drive-breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drive-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.drive-crumb-item {
+  color: var(--mute);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.12s ease;
+}
+
+.drive-crumb-item:hover {
+  color: var(--ink);
+}
+
+.drive-crumb-item.current {
+  color: var(--ink);
+  cursor: default;
+}
+
+.drive-crumb-sep {
+  color: var(--hairline-strong);
+  font-size: 14px;
+}
+
+.drive-folder-actions-dropdown-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.drive-canvas-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Drive Section Styling */
+.drive-section {
+  margin-bottom: 28px;
+}
+
+/* ==========================================================================
+   3. WORKSPACE SCREEN (Focused Technical Dashboard)
+   ========================================================================== */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--canvas);
+}
+
+.app-header {
+  background: var(--canvas);
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.app-header-main {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-mode-bar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 4px 12px 6px;
+  border-top: 1px solid var(--hairline);
+  background: var(--canvas);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--hairline);
+  flex-shrink: 0;
+}
+
+.header-title-wrapper {
+  flex: 1;
+  max-width: 440px;
+  min-width: 0;
+}
+
+.header-title-wrapper .editor-title-input {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  line-height: 20px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.header-title-wrapper .editor-title-input:hover {
+  background: var(--canvas-soft);
+}
+
+.header-title-wrapper .editor-title-input:focus {
+  background: var(--canvas);
+  border-color: var(--hairline-strong);
+  box-shadow: 0 0 0 2px var(--hairline);
+}
+
+.header-title-wrapper .editor-title-input[readonly] {
+  cursor: default;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  user-select: text;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Main Workspace */
+.app-workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--canvas-soft);
+  border-right: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex-shrink: 0;
+  transition: width 0.2s ease;
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: 0;
+  border-right: none;
+}
+
+/* Editor Workspace */
+.editor-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Split Panes */
+.editor-panes {
+  flex: 1;
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.editor-pane-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid var(--hairline);
+  background: var(--canvas);
+}
+
+/* Read Mode (Default upon entering): Clean reading pane, editor hidden */
+.editor-workspace.read-mode .editor-pane-left {
+  display: none !important;
+}
+
+.editor-workspace.read-mode .editor-pane-right {
+  flex: 1;
+  width: 100%;
+  padding: 36px 48px;
+  background: var(--canvas);
+}
+
+/* Edit Mode: Always preset to Split View (50% editor, 50% preview) */
+.editor-workspace.edit-mode .editor-pane-left {
+  flex: 1;
+  width: 50%;
+  display: flex !important;
+}
+
+.editor-workspace.edit-mode .editor-pane-right {
+  flex: 1;
+  width: 50%;
+  display: block !important;
+  padding: 24px 32px;
+  background: var(--canvas-soft);
+}
+
+.editor-pane-right {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px 36px;
+  background: var(--canvas-soft);
+}
+
+/* Responsive Workspace Layouts (PC vs Mobile) */
+/* 1. PC Version (width >= 769px): Two-column split layout when in edit mode (左右兩欄), clean reading in read mode */
+@media (min-width: 769px) {
+  .mobile-only,
+  .drive-drawer-backdrop,
+  .mobile-mode-bar {
+    display: none !important;
+  }
+
+  .editor-workspace.edit-mode .editor-panes {
+    display: flex !important;
+    flex-direction: row !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .editor-workspace.edit-mode .editor-pane-left {
+    display: flex !important;
+    flex: 1 1 50% !important;
+    width: 50% !important;
+    max-width: 50% !important;
+    border-right: 1px solid var(--hairline) !important;
+    height: 100% !important;
+    background: var(--canvas) !important;
+  }
+
+  .editor-workspace.edit-mode .editor-pane-right {
+    display: block !important;
+    flex: 1 1 50% !important;
+    width: 50% !important;
+    max-width: 50% !important;
+    padding: 24px 32px !important;
+    background: var(--canvas-soft) !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+  }
+
+  .editor-workspace.read-mode .editor-pane-left {
+    display: none !important;
+  }
+
+  .editor-workspace.read-mode .editor-pane-right {
+    display: block !important;
+    flex: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 36px 48px !important;
+    background: var(--canvas) !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* 2. Mobile Version (width <= 768px): Short horizontal width -> Header Switcher (切換閱讀與撰寫) */
+@media (max-width: 768px) {
+  .portal-grid {
+    grid-template-columns: 1fr;
+    max-width: 360px;
+  }
+
+  .portal-title {
+    font-size: 36px;
+    letter-spacing: -1.6px;
+    line-height: 40px;
+  }
+
+  .sidebar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    box-shadow: var(--shadow-level-5);
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: var(--sidebar-width);
+  }
+
+  /* Header compact adjustments on mobile */
+  .mobile-mode-bar {
+    display: flex !important;
+    height: 38px !important;
+    padding: 3px 12px 5px !important;
+    background: var(--canvas) !important;
+    border-top: 1px solid var(--hairline) !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .app-header-main {
+    padding: 0 10px !important;
+    height: 44px !important;
+  }
+
+  /* Optimize Row 1 elements for maximum Title space without horizontal squishing */
+  .header-left {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    gap: 8px !important;
+  }
+
+  .header-title-wrapper {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .header-title-wrapper .editor-title-input {
+    width: 100% !important;
+    font-size: 15px !important;
+    padding: 4px 6px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  /* Back button: show arrow icon only, hide text */
+  #back-to-drive-text {
+    display: none !important;
+  }
+
+  /* Right-side actions: strictly minimalist to prevent title squishing */
+  .header-right {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Hide verbose & non-essential desktop elements on mobile */
+  .header-divider {
+    display: none !important;
+  }
+
+  .editor-workspace .editor-panes {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+  }
+
+  /* Mobile Read Mode (閱讀): Show only Preview pane */
+  .editor-workspace.mobile-mode-read .editor-pane-left {
+    display: none !important;
+  }
+
+  .editor-workspace.mobile-mode-read .editor-pane-right {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+    padding: 20px 16px !important;
+    background: var(--canvas) !important;
+    overflow-y: auto !important;
+  }
+
+  /* Mobile Write Mode (撰寫): Show only Editor pane & Toolbar */
+  .editor-workspace.mobile-mode-write .editor-pane-left {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+    border-right: none !important;
+    background: var(--canvas) !important;
+  }
+
+  .editor-workspace.mobile-mode-write .editor-pane-right {
+    display: none !important;
+  }
+
+  /* ====================================================================
+     Google Drive Inspired Mobile Layout for #drive-screen
+     ==================================================================== */
+
+  .drive-top-header {
+    height: 52px !important;
+    padding: 0 10px !important;
+    gap: 8px !important;
+  }
+
+  .drive-brand-text {
+    display: none !important;
+  }
+
+  .drive-header-left {
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .drive-header-center {
+    flex: 1 !important;
+    max-width: none !important;
+    margin: 0 4px !important;
+  }
+
+  .drive-header-right {
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .drive-layout {
+    display: block !important;
+    position: relative !important;
+    height: calc(100vh - 52px) !important;
+    overflow: hidden !important;
+  }
+
+  /* Slide-Out Navigation Drawer */
+  .drive-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 84vw !important;
+    background: var(--canvas) !important;
+    z-index: 400 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: none !important;
+    border-right: 1px solid var(--hairline) !important;
+    padding: 20px 14px !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .drive-sidebar.drawer-open {
+    transform: translateX(0) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .drive-drawer-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: 390 !important;
+    display: none !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+  }
+
+  .drive-drawer-backdrop.active {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* Full Width Drive Canvas on Mobile */
+  .drive-main-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 14px 12px 90px 12px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .drive-canvas-header {
+    margin-bottom: 12px !important;
+  }
+
+  .drive-breadcrumb-row {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    padding-bottom: 2px !important;
+  }
+
+  .drive-breadcrumb-row::-webkit-scrollbar {
+    display: none !important;
+  }
+}

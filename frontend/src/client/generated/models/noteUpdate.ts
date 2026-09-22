@@ -15,5 +15,5 @@ export interface NoteUpdate {
   iv?: string | null;
   folder_id?: number | null;
   move?: boolean;
-  tags?: string[] | null;
+  categories?: string[] | null;
 }

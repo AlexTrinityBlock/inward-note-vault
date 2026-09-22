@@ -6,12 +6,9 @@
  */
 
 /**
- * Payload for renaming a tag.
+ * One of the user's categories with Jev's probability for it.
  */
-export interface TagUpdate {
-  /**
-     * @minLength 1
-     * @maxLength 50
-     */
+export interface CategorySuggestionRead {
   name: string;
+  probability: number;
 }

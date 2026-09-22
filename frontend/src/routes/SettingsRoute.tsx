@@ -1,24 +1,31 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   useGetSettings,
   useUpdateSettings,
   useVerifyTypesafeKey,
 } from "../client/generated";
+import { AppHeader } from "../components/AppHeader";
+import { useDialog } from "../components/Dialog";
+import { Icon } from "../components/Icon";
+import { useToast } from "../components/Toast";
 import { useI18n } from "../i18n";
 
 /** Account, TypeSafe key, auto-classification, and how the encryption works. */
 export function SettingsRoute() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const dialog = useDialog();
+  const toast = useToast();
   const settings = useGetSettings();
   const update = useUpdateSettings();
   const verify = useVerifyTypesafeKey();
 
   const [draftKey, setDraftKey] = useState("");
   const [draftModel, setDraftModel] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
   const [verifyResult, setVerifyResult] = useState<string | null>(null);
 
   const configured = settings.data?.typesafe_configured ?? false;
@@ -27,7 +34,6 @@ export function SettingsRoute() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setStatus(null);
     try {
       await update.mutateAsync({
         data: {
@@ -37,17 +43,25 @@ export function SettingsRoute() {
         },
       });
       setDraftKey("");
-      setStatus(t("settings.saved"));
+      toast.success(t("settings.saved"));
       await queryClient.invalidateQueries();
     } catch {
-      setStatus(t("settings.saveFailed"));
+      toast.error(t("settings.saveFailed"));
     }
   }
 
   async function removeKey() {
+    const ok = await dialog.confirm({
+      message: t("settings.clearKey"),
+      confirmLabel: t("common.delete"),
+      danger: true,
+    });
+    if (!ok) {
+      return;
+    }
     await update.mutateAsync({ data: { clear_typesafe_api_key: true } });
     setVerifyResult(null);
-    setStatus(t("settings.saved"));
+    toast.success(t("settings.saved"));
     await queryClient.invalidateQueries();
   }
 
@@ -70,74 +84,94 @@ export function SettingsRoute() {
     }
   }
 
-  if (settings.isPending) {
-    return <p className="muted">{t("common.loading")}</p>;
-  }
-
   return (
-    <form className="settings" onSubmit={submit}>
-      <section className="panel">
-        <h2>{t("settings.typesafe")}</h2>
-        <p className="muted small">
-          {source === "stored"
-            ? t("settings.apiKeyStored")
-            : source === "env"
-              ? t("settings.apiKeyFromEnv")
-              : t("settings.apiKeyMissing")}
-        </p>
-
-        <label>
-          {t("settings.apiKey")}
-          <input
-            value={draftKey}
-            onChange={(event) => setDraftKey(event.target.value)}
-            placeholder="ts_…"
-            autoComplete="off"
-          />
-        </label>
-
-        <label>
-          {t("settings.model")}
-          <input
-            value={model}
-            onChange={(event) => setDraftModel(event.target.value)}
-            placeholder="jev-latest"
-          />
-          <span className="hint">{t("settings.modelHint")}</span>
-        </label>
-
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={settings.data?.auto_classify_enabled ?? false}
-            onChange={(event) => void toggleAutoClassify(event.target.checked)}
-          />
-          {t("settings.autoClassify")}
-        </label>
-        <p className="hint">{t("settings.autoClassifyHint")}</p>
-
-        <div className="row">
-          <button type="submit" className="primary" disabled={update.isPending}>
-            {t("common.save")}
+    <div className="workspace-container">
+      <AppHeader
+        leading={
+          <button
+            type="button"
+            className="drive-icon-btn ghost"
+            title={t("common.back")}
+            aria-label={t("common.back")}
+            onClick={() => navigate("/")}
+          >
+            <Icon name="arrow-left" size={18} />
           </button>
-          <button type="button" onClick={() => void testKey()} disabled={!configured || verify.isPending}>
-            {verify.isPending ? t("settings.verifying") : t("settings.verify")}
-          </button>
-          {configured ? (
-            <button type="button" className="danger" onClick={() => void removeKey()}>
-              {t("settings.clearKey")}
-            </button>
-          ) : null}
-          {status ? <span className="muted small">{status}</span> : null}
-        </div>
-        {verifyResult ? <p className="muted small">{verifyResult}</p> : null}
-      </section>
+        }
+      />
 
-      <section className="panel">
-        <h2>{t("settings.encryption")}</h2>
-        <p>{t("settings.encryptionBody")}</p>
-        <p className="hint">{t("settings.metadataWarning")}</p>
-      </section>
-    </form>
+      {settings.isPending ? (
+        <p className="muted settings-loading">{t("common.loading")}</p>
+      ) : (
+        <form className="settings" onSubmit={submit}>
+          <section className="panel settings-panel">
+            <h2>{t("settings.typesafe")}</h2>
+            <p className="muted small">
+              {source === "stored"
+                ? t("settings.apiKeyStored")
+                : source === "env"
+                  ? t("settings.apiKeyFromEnv")
+                  : t("settings.apiKeyMissing")}
+            </p>
+
+            <label>
+              {t("settings.apiKey")}
+              <input
+                value={draftKey}
+                onChange={(event) => setDraftKey(event.target.value)}
+                placeholder="ts_…"
+                autoComplete="off"
+              />
+            </label>
+
+            <label>
+              {t("settings.model")}
+              <input
+                value={model}
+                onChange={(event) => setDraftModel(event.target.value)}
+                placeholder="jev-latest"
+              />
+              <span className="hint">{t("settings.modelHint")}</span>
+            </label>
+
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={settings.data?.auto_classify_enabled ?? false}
+                onChange={(event) => void toggleAutoClassify(event.target.checked)}
+              />
+              {t("settings.autoClassify")}
+            </label>
+            <p className="hint">{t("settings.autoClassifyHint")}</p>
+
+            <div className="row">
+              <button type="submit" className="primary" disabled={update.isPending}>
+                {t("common.save")}
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => void testKey()}
+                disabled={!configured || verify.isPending}
+              >
+                {verify.isPending ? t("settings.verifying") : t("settings.verify")}
+              </button>
+              {configured ? (
+                <button type="button" className="danger" onClick={() => void removeKey()}>
+                  {t("settings.clearKey")}
+                </button>
+              ) : null}
+            </div>
+            {verifyResult ? <p className="muted small">{verifyResult}</p> : null}
+          </section>
+
+          <section className="panel settings-panel">
+            <h2>{t("settings.encryption")}</h2>
+            <p>{t("settings.encryptionBody")}</p>
+            <p className="hint">{t("settings.metadataWarning")}</p>
+          </section>
+        </form>
+      )}
+    </div>
   );
 }

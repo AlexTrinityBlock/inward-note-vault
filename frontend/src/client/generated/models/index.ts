@@ -6,6 +6,10 @@
  */
 
 export * from './account';
+export * from './categoryCreate';
+export * from './categoryRead';
+export * from './categorySuggestionRead';
+export * from './categoryUpdate';
 export * from './classificationRead';
 export * from './classifyRequest';
 export * from './credentials';
@@ -29,10 +33,6 @@ export * from './settingsReadTypesafeSource';
 export * from './settingsUpdate';
 export * from './setupRequest';
 export * from './setupStatus';
-export * from './tagCreate';
-export * from './tagRead';
-export * from './tagSuggestionRead';
-export * from './tagUpdate';
 export * from './typeSafeCheck';
 export * from './validationError';
 export * from './validationErrorCtx';
