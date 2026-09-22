@@ -5,7 +5,7 @@ from datetime import timedelta
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.limits import TAG_COUNT_MAX, LimitExceeded, clean_tag_name
+from app.core.limits import CATEGORY_COUNT_MAX, LimitExceeded, clean_category_name
 from app.core.security import (
     hash_password,
     hash_session_token,
@@ -14,12 +14,12 @@ from app.core.security import (
 )
 from app.models import (
     NOTEBOOK_PLAIN,
+    Category,
     CryptoProfile,
     Folder,
     Note,
-    NoteTag,
+    NoteCategory,
     Setting,
-    Tag,
     User,
     UserSession,
     utcnow,
@@ -229,77 +229,81 @@ def folder_paths(session: Session) -> dict[int, str]:
 
 
 # --------------------------------------------------------------------------- #
-# Tags
+# Categories
 # --------------------------------------------------------------------------- #
 
 
-def list_tags(session: Session) -> list[Tag]:
-    """All tags, ordered by name."""
-    return list(session.scalars(select(Tag).order_by(Tag.name)))
+def list_categories(session: Session) -> list[Category]:
+    """All categories, ordered by name."""
+    return list(session.scalars(select(Category).order_by(Category.name)))
 
 
-def get_tag(session: Session, tag_id: int) -> Tag | None:
-    """Look up a tag by id."""
-    return session.get(Tag, tag_id)
+def get_category(session: Session, category_id: int) -> Category | None:
+    """Look up a category by id."""
+    return session.get(Category, category_id)
 
 
-def get_or_create_tag(session: Session, name: str) -> Tag:
-    """Find a tag by name or create it."""
+def get_or_create_category(session: Session, name: str) -> Category:
+    """Find a category by name or create it."""
     cleaned = name.strip()
-    tag = session.scalar(select(Tag).where(func.lower(Tag.name) == cleaned.lower()))
-    if tag is None:
-        tag = Tag(name=cleaned)
-        session.add(tag)
+    category = session.scalar(select(Category).where(func.lower(Category.name) == cleaned.lower()))
+    if category is None:
+        category = Category(name=cleaned)
+        session.add(category)
         session.flush()
-    return tag
+    return category
 
 
-def rename_tag(session: Session, tag: Tag, name: str) -> Tag:
-    """Rename a tag."""
-    tag.name = name.strip()
+def rename_category(session: Session, category: Category, name: str) -> Category:
+    """Rename a category."""
+    category.name = name.strip()
     session.commit()
-    session.refresh(tag)
-    return tag
+    session.refresh(category)
+    return category
 
 
-def delete_tag(session: Session, tag: Tag) -> None:
-    """Delete a tag and its note associations."""
-    session.delete(tag)
+def delete_category(session: Session, category: Category) -> None:
+    """Delete a category and its note associations."""
+    session.delete(category)
     session.commit()
 
 
-def tag_usage(session: Session) -> dict[int, int]:
-    """Number of notes per tag id."""
-    rows = session.execute(select(NoteTag.tag_id, func.count()).group_by(NoteTag.tag_id)).all()
-    return {tag_id: count for tag_id, count in rows}
+def category_usage(session: Session) -> dict[int, int]:
+    """Number of notes per category id."""
+    rows = session.execute(
+        select(NoteCategory.category_id, func.count()).group_by(NoteCategory.category_id)
+    ).all()
+    return {category_id: count for category_id, count in rows}
 
 
-def resolve_note_tags(session: Session, names: list[str]) -> list[Tag]:
-    """Resolve tag names for a note, creating new ones within the vault's limits.
+def resolve_note_categories(session: Session, names: list[str]) -> list[Category]:
+    """Resolve category names for a note, creating new ones within the vault's limits.
 
     Raises `LimitExceeded` when a name is too long or the vault is full, so a
-    note can never smuggle in a tag the tag endpoints would refuse.
+    note can never smuggle in a category the category endpoints would refuse.
     """
     cleaned: list[str] = []
     for name in names:
-        candidate = clean_tag_name(name)
+        candidate = clean_category_name(name)
         if candidate.lower() not in {seen.lower() for seen in cleaned}:
             cleaned.append(candidate)
 
-    known = {tag.name.lower(): tag for tag in list_tags(session)}
+    known = {category.name.lower(): category for category in list_categories(session)}
     new_names = [name for name in cleaned if name.lower() not in known]
-    if len(known) + len(new_names) > TAG_COUNT_MAX:
-        raise LimitExceeded(f"The vault already holds the maximum of {TAG_COUNT_MAX} tags")
+    if len(known) + len(new_names) > CATEGORY_COUNT_MAX:
+        raise LimitExceeded(
+            f"The vault already holds the maximum of {CATEGORY_COUNT_MAX} categories"
+        )
 
     return [
-        known[name.lower()] if name.lower() in known else get_or_create_tag(session, name)
+        known[name.lower()] if name.lower() in known else get_or_create_category(session, name)
         for name in cleaned
     ]
 
 
-def set_note_tags(session: Session, note: Note, names: list[str]) -> Note:
-    """Replace a note's tags with the given names."""
-    note.tags = resolve_note_tags(session, names)
+def set_note_categories(session: Session, note: Note, names: list[str]) -> Note:
+    """Replace a note's categories with the given names."""
+    note.categories = resolve_note_categories(session, names)
     session.commit()
     session.refresh(note)
     return note
@@ -315,7 +319,7 @@ def list_notes(
     *,
     notebook: str | None = None,
     folder_id: int | None = None,
-    tag: str | None = None,
+    category: str | None = None,
     query: str | None = None,
     limit: int = 100,
     offset: int = 0,
@@ -325,16 +329,16 @@ def list_notes(
     `query` searches plain note titles and bodies. Encrypted notes cannot be
     searched by the server, so a search never returns them.
     """
-    statement = select(Note).options(selectinload(Note.tags))
+    statement = select(Note).options(selectinload(Note.categories))
     if notebook is not None:
         statement = statement.where(Note.notebook == notebook)
     if folder_id is not None:
         statement = statement.where(Note.folder_id == folder_id)
-    if tag is not None:
+    if category is not None:
         statement = (
-            statement.join(NoteTag, NoteTag.note_id == Note.id)
-            .join(Tag, Tag.id == NoteTag.tag_id)
-            .where(func.lower(Tag.name) == tag.lower())
+            statement.join(NoteCategory, NoteCategory.note_id == Note.id)
+            .join(Category, Category.id == NoteCategory.category_id)
+            .where(func.lower(Category.name) == category.lower())
         )
     if query:
         pattern = f"%{query}%"
@@ -347,8 +351,10 @@ def list_notes(
 
 
 def get_note(session: Session, note_id: int) -> Note | None:
-    """Look up a note by id, with its tags loaded."""
-    return session.scalar(select(Note).options(selectinload(Note.tags)).where(Note.id == note_id))
+    """Look up a note by id, with its categories loaded."""
+    return session.scalar(
+        select(Note).options(selectinload(Note.categories)).where(Note.id == note_id)
+    )
 
 
 def create_note(session: Session, **fields: object) -> Note:

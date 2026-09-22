@@ -1,13 +1,13 @@
-"""The vault's hard limits: tag size, tag count, and classification windows."""
+"""The vault's hard limits: category size, category count, and classification windows."""
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.core.limits import (
-    TAG_COUNT_MAX,
-    TAG_NAME_MAX_CHARS,
+    CATEGORY_COUNT_MAX,
+    CATEGORY_NAME_MAX_CHARS,
     LimitExceeded,
-    clean_tag_name,
+    clean_category_name,
     split_windows,
 )
 from tests.conftest import PASSWORD, USERNAME
@@ -28,72 +28,73 @@ def test_window_size_of_zero_keeps_the_text_whole() -> None:
     assert split_windows("abc", 0) == ["abc"]
 
 
-def test_tag_names_are_trimmed_and_bounded() -> None:
-    assert clean_tag_name("  Work  ") == "Work"
+def test_category_names_are_trimmed_and_bounded() -> None:
+    assert clean_category_name("  Work  ") == "Work"
 
     with pytest.raises(LimitExceeded):
-        clean_tag_name("   ")
+        clean_category_name("   ")
     with pytest.raises(LimitExceeded):
-        clean_tag_name("x" * (TAG_NAME_MAX_CHARS + 1))
+        clean_category_name("x" * (CATEGORY_NAME_MAX_CHARS + 1))
     # Exactly at the limit is fine, CJK included: characters, not bytes.
-    assert clean_tag_name("標" * TAG_NAME_MAX_CHARS) == "標" * TAG_NAME_MAX_CHARS
+    assert clean_category_name("標" * CATEGORY_NAME_MAX_CHARS) == "標" * CATEGORY_NAME_MAX_CHARS
 
 
-def test_tag_name_length_is_enforced_by_the_api(account: TestClient) -> None:
-    assert account.post("/api/tags", json={"name": "x" * TAG_NAME_MAX_CHARS}).status_code == 201
+def test_category_name_length_is_enforced_by_the_api(account: TestClient) -> None:
+    created = account.post("/api/categories", json={"name": "x" * CATEGORY_NAME_MAX_CHARS})
+    assert created.status_code == 201
 
-    response = account.post("/api/tags", json={"name": "y" * (TAG_NAME_MAX_CHARS + 1)})
+    response = account.post("/api/categories", json={"name": "y" * (CATEGORY_NAME_MAX_CHARS + 1)})
 
     assert response.status_code == 422
 
 
-def test_tag_name_length_is_enforced_on_notes_too(account: TestClient) -> None:
-    """A note must not smuggle in a tag the tag endpoints would refuse."""
+def test_category_name_length_is_enforced_on_notes_too(account: TestClient) -> None:
+    """A note must not smuggle in a category the category endpoints would refuse."""
     response = account.post(
-        "/api/notes", json={"title": "Note", "tags": ["z" * (TAG_NAME_MAX_CHARS + 1)]}
+        "/api/notes", json={"title": "Note", "categories": ["z" * (CATEGORY_NAME_MAX_CHARS + 1)]}
     )
 
     assert response.status_code == 422
 
 
-def test_the_vault_refuses_more_tags_than_the_cap(account: TestClient) -> None:
-    for index in range(TAG_COUNT_MAX):
-        created = account.post("/api/tags", json={"name": f"tag-{index}"})
+def test_the_vault_refuses_more_categories_than_the_cap(account: TestClient) -> None:
+    for index in range(CATEGORY_COUNT_MAX):
+        created = account.post("/api/categories", json={"name": f"category-{index}"})
         assert created.status_code == 201
 
-    overflow = account.post("/api/tags", json={"name": "one-too-many"})
+    overflow = account.post("/api/categories", json={"name": "one-too-many"})
 
     assert overflow.status_code == 409
-    assert str(TAG_COUNT_MAX) in overflow.json()["detail"]
-    assert len(account.get("/api/tags").json()) == TAG_COUNT_MAX
+    assert str(CATEGORY_COUNT_MAX) in overflow.json()["detail"]
+    assert len(account.get("/api/categories").json()) == CATEGORY_COUNT_MAX
 
 
 def test_notes_cannot_grow_the_vocabulary_past_the_cap(account: TestClient) -> None:
-    """Adding tags through a note hits the same ceiling."""
-    for index in range(TAG_COUNT_MAX):
-        account.post("/api/tags", json={"name": f"tag-{index}"})
+    """Adding categories through a note hits the same ceiling."""
+    for index in range(CATEGORY_COUNT_MAX):
+        account.post("/api/categories", json={"name": f"category-{index}"})
 
-    response = account.post("/api/notes", json={"title": "Note", "tags": ["fresh"]})
+    response = account.post("/api/notes", json={"title": "Note", "categories": ["fresh"]})
 
     assert response.status_code == 422
-    assert str(TAG_COUNT_MAX) in response.json()["detail"]
+    assert str(CATEGORY_COUNT_MAX) in response.json()["detail"]
 
 
-def test_existing_tags_still_work_at_the_cap(account: TestClient) -> None:
-    """Being full must not stop a note from using tags that already exist."""
-    for index in range(TAG_COUNT_MAX):
-        account.post("/api/tags", json={"name": f"tag-{index}"})
+def test_existing_categories_still_work_at_the_cap(account: TestClient) -> None:
+    """Being full must not stop a note from using categories that already exist."""
+    for index in range(CATEGORY_COUNT_MAX):
+        account.post("/api/categories", json={"name": f"category-{index}"})
 
-    response = account.post("/api/notes", json={"title": "Note", "tags": ["tag-0"]})
+    response = account.post("/api/notes", json={"title": "Note", "categories": ["category-0"]})
 
     assert response.status_code == 201
-    assert response.json()["tags"] == ["tag-0"]
+    assert response.json()["categories"] == ["category-0"]
 
 
-def test_tag_names_are_unique_case_insensitively(account: TestClient) -> None:
-    account.post("/api/tags", json={"name": "Work"})
+def test_category_names_are_unique_case_insensitively(account: TestClient) -> None:
+    account.post("/api/categories", json={"name": "Work"})
 
-    assert account.post("/api/tags", json={"name": "work"}).status_code == 409
+    assert account.post("/api/categories", json={"name": "work"}).status_code == 409
 
 
 def test_setup_still_works_with_the_limits_in_place(client: TestClient) -> None:

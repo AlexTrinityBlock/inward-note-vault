@@ -1,6 +1,6 @@
 [project]
 name = "inward-note-vault-backend"
-version = "0.2.1"
+version = "0.3.0"
 description = "Inward Note Vault API: capture, classify and retrieve personal notes."
 readme = "README.md"
 requires-python = ">=3.14"

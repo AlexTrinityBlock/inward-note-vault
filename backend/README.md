@@ -17,8 +17,8 @@ a bare-metal install needs one process and one database file.
 | Classification of encrypted notes | Refused unless the caller sends `consent: true` **and** the decrypted text, which is forwarded to TypeSafe and never stored. |
 
 Metadata that stays readable on the server: note ids, timestamps, folder
-membership, and tag names — including for encrypted notes, so the tree and tag
-filters keep working. Only the note's title and body are encrypted.
+membership, and category names — including for encrypted notes, so the tree and
+category filters keep working. Only the note's title and body are encrypted.
 
 ## Layout
 
@@ -26,16 +26,17 @@ filters keep working. Only the note's title and body are encrypted.
 backend/
 ├── app/
 │   ├── api/
-│   │   ├── routes/        # auth, settings, folders, tags, crypto, notes, health
+│   │   ├── routes/        # auth, settings, folders, categories, crypto, notes, health
 │   │   └── deps.py        # sessions, database session, TypeSafe client
 │   ├── core/
 │   │   ├── config.py      # settings from the environment / .env
 │   │   ├── db.py          # engine, session factory, declarative base
+│   │   ├── limits.py      # category caps and the classification window size
 │   │   ├── migrations.py  # alembic upgrade head at start-up
 │   │   ├── security.py    # password hashing and session tokens
 │   │   └── typesafe.py    # client + Jev judgment design for classification
 │   ├── crud.py            # every database operation
-│   ├── models.py          # users, sessions, settings, folders, tags, notes, crypto
+│   ├── models.py          # users, sessions, settings, folders, categories, notes, crypto
 │   ├── cli.py             # `inward-note-vault` console script
 │   └── main.py            # application factory, SPA hosting
 ├── alembic/               # migrations
@@ -59,7 +60,7 @@ start-up; `INWARD_DATA_DIR` moves it.
 ## Develop
 
 ```bash
-uv run pytest             # 33 tests
+uv run pytest             # 56 tests
 uv run ruff check .       # lint
 uv run ruff format .      # format
 uv run alembic revision --autogenerate -m "describe the change"
@@ -93,9 +94,10 @@ uv run alembic revision --autogenerate -m "describe the change"
 | GET/PATCH | `/api/settings` | Auto-classify flag, TypeSafe model; the key is write-only |
 | POST | `/api/settings/typesafe/verify` | Check the stored key against TypeSafe |
 | GET/POST | `/api/folders`, `/api/folders/{id}` | Folder tree via `parent_id` |
-| GET/POST | `/api/tags`, `/api/tags/{id}` | Tags with usage counts |
+| GET/POST | `/api/categories` | Categories with note counts, capped at 200 |
+| PATCH/DELETE | `/api/categories/{id}` | Rename, or delete and strip it from every note |
 | GET/POST | `/api/crypto/profile` | KDF parameters, stored once |
-| GET/POST | `/api/notes` | `notebook`, `folder_id`, `tag`, `q`, `limit`, `offset` |
+| GET/POST | `/api/notes` | `notebook`, `folder_id`, `category`, `q`, `limit`, `offset` |
 | GET/PATCH/DELETE | `/api/notes/{id}` | Plain or encrypted payload |
 | POST | `/api/notes/{id}/classify` | Jev suggestions; encrypted notes need `consent` + `content` |
 
@@ -103,17 +105,19 @@ uv run alembic revision --autogenerate -m "describe the change"
 
 Classification is one request per **window** of a note: one `Choice` over the
 existing folders (always including a "nothing fits" option) plus one `Noul` per
-candidate tag, so several tags can be true at once.
+candidate category, so several categories can be true at once.
 
-- **Candidates are the tags the user created**, capped at `TAG_COUNT_MAX` (200,
-  each name at most 50 characters). Jev selects from what exists and never
-  invents a tag, so an empty vault simply produces no tag questions. The UI's
-  Tags panel is where that vocabulary is built.
+- **Candidates are the categories the user created.** The vault caps them at
+  `CATEGORY_COUNT_MAX` (200, each name at most `CATEGORY_NAME_MAX_CHARS` = 50
+  characters), and one request asks about at most `MAX_CATEGORY_CANDIDATES` (24)
+  of them. Jev selects from what exists and never invents a category, so an empty
+  vault simply produces no category questions. The category page is where that
+  vocabulary is built.
 - **Long notes are sampled.** Text is cut into consecutive windows of
   `INWARD_CLASSIFY_WINDOW_CHARS` (default 10,000 characters, nothing dropped),
-  each window is classified, and the answers are averaged: tags average their
-  yes-probabilities, the folder averages its whole option distribution before a
-  winner is taken. A window that fails is skipped and counted in
+  each window is classified, and the answers are averaged: categories average
+  their yes-probabilities, the folder averages its whole option distribution
+  before a winner is taken. A window that fails is skipped and counted in
   `samples_failed`; if every window fails the request is a 502.
 - **Confidence with several samples is the mean of the samples' confidences**,
   not a recomputed measure of the averaged distribution.

@@ -1,4 +1,4 @@
-"""Folders, tags, and the note invariants of each notebook."""
+"""Folders, categories, and the note invariants of each notebook."""
 
 from fastapi.testclient import TestClient
 
@@ -36,33 +36,41 @@ def test_deleting_a_folder_keeps_its_notes_and_children(account: TestClient) -> 
     assert account.get(f"/api/folders/{parent['id']}").json()["path"] == "Parent"
 
 
-def test_tags_are_shared_and_counted(account: TestClient) -> None:
-    note = account.post("/api/notes", json={"title": "Tagged", "tags": ["work", "urgent"]}).json()
+def test_categories_are_shared_and_counted(account: TestClient) -> None:
+    note = account.post(
+        "/api/notes", json={"title": "Categorized", "categories": ["work", "urgent"]}
+    ).json()
 
-    assert sorted(note["tags"]) == ["urgent", "work"]
+    assert sorted(note["categories"]) == ["urgent", "work"]
 
-    counts = {tag["name"]: tag["note_count"] for tag in account.get("/api/tags").json()}
+    counts = {
+        category["name"]: category["note_count"]
+        for category in account.get("/api/categories").json()
+    }
     assert counts == {"urgent": 1, "work": 1}
 
-    account.patch(f"/api/notes/{note['id']}", json={"tags": ["work"]})
+    account.patch(f"/api/notes/{note['id']}", json={"categories": ["work"]})
 
-    counts = {tag["name"]: tag["note_count"] for tag in account.get("/api/tags").json()}
+    counts = {
+        category["name"]: category["note_count"]
+        for category in account.get("/api/categories").json()
+    }
     assert counts["work"] == 1
     assert counts["urgent"] == 0
 
 
-def test_duplicate_tag_names_are_rejected(account: TestClient) -> None:
-    assert account.post("/api/tags", json={"name": "Idea"}).status_code == 201
-    assert account.post("/api/tags", json={"name": "idea"}).status_code == 409
+def test_duplicate_category_names_are_rejected(account: TestClient) -> None:
+    assert account.post("/api/categories", json={"name": "Idea"}).status_code == 201
+    assert account.post("/api/categories", json={"name": "idea"}).status_code == 409
 
 
-def test_renaming_a_tag_keeps_it_on_its_notes(account: TestClient) -> None:
-    tag = account.post("/api/tags", json={"name": "Old"}).json()
-    note = account.post("/api/notes", json={"title": "Note", "tags": ["Old"]}).json()
+def test_renaming_a_category_keeps_it_on_its_notes(account: TestClient) -> None:
+    category = account.post("/api/categories", json={"name": "Old"}).json()
+    note = account.post("/api/notes", json={"title": "Note", "categories": ["Old"]}).json()
 
-    account.patch(f"/api/tags/{tag['id']}", json={"name": "New"})
+    account.patch(f"/api/categories/{category['id']}", json={"name": "New"})
 
-    assert account.get(f"/api/notes/{note['id']}").json()["tags"] == ["New"]
+    assert account.get(f"/api/notes/{note['id']}").json()["categories"] == ["New"]
 
 
 def test_plain_notes_require_a_title_and_reject_ciphertext(account: TestClient) -> None:

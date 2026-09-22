@@ -45,12 +45,12 @@ class _Scripted:
         *,
         folder: str = "Work",
         folder_probabilities: dict[str, float] | None = None,
-        tags: dict[str, float] | None = None,
+        categories: dict[str, float] | None = None,
         error: str | None = None,
     ) -> None:
         self.folder = folder
         self.folder_probabilities = folder_probabilities
-        self.tags = tags
+        self.categories = categories
         self.error = error
 
 
@@ -58,8 +58,8 @@ class FakeTypeSafeClient:
     """Records requests and answers every question that was asked.
 
     The real API always answers each question, so the fake does too: scripted
-    probabilities for the tags named in the test, a low default for the rest.
-    Pass `script` to answer successive calls differently, which is how the
+    probabilities for the categories named in the test, a low default for the
+    rest. Pass `script` to answer successive calls differently, which is how the
     window-averaging tests work.
     """
 
@@ -67,12 +67,14 @@ class FakeTypeSafeClient:
         self,
         *,
         folder: str = "Work",
-        tags: dict[str, float] | None = None,
+        categories: dict[str, float] | None = None,
         default_probability: float = 0.05,
         script: list[_Scripted] | None = None,
     ) -> None:
         self.folder = folder
-        self.tags = tags if tags is not None else {"Work": 0.82, "Idea": 0.31, "Task": 0.55}
+        self.categories = (
+            categories if categories is not None else {"Work": 0.82, "Idea": 0.31, "Task": 0.55}
+        )
         self.default_probability = default_probability
         self.script = script
         self.calls: list[dict[str, Any]] = []
@@ -86,16 +88,16 @@ class FakeTypeSafeClient:
         step = (
             self.script[min(index, len(self.script) - 1)]
             if self.script
-            else _Scripted(folder=self.folder, tags=self.tags)
+            else _Scripted(folder=self.folder, categories=self.categories)
         )
         if step.error:
             raise RuntimeError(step.error)
 
-        scripted = step.tags if step.tags is not None else self.tags
+        scripted = step.categories if step.categories is not None else self.categories
         nouls = {
-            name: scripted.get(name.removeprefix("tag:"), self.default_probability)
+            name: scripted.get(name.removeprefix("category:"), self.default_probability)
             for name in questions
-            if name.startswith("tag:")
+            if name.startswith("category:")
         }
         return _Response(
             folder=step.folder,
@@ -139,12 +141,12 @@ def test_long_note_is_sampled_window_by_window_and_averaged(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
     """A note over one window becomes several requests whose answers are averaged."""
-    account.post("/api/tags", json={"name": "Work"})
-    account.post("/api/tags", json={"name": "Idea"})
+    account.post("/api/categories", json={"name": "Work"})
+    account.post("/api/categories", json={"name": "Idea"})
     fake_typesafe.script = [
-        _Scripted(tags={"Work": 0.9, "Idea": 0.2}),
-        _Scripted(tags={"Work": 0.6, "Idea": 0.8}),
-        _Scripted(tags={"Work": 0.3, "Idea": 0.5}),
+        _Scripted(categories={"Work": 0.9, "Idea": 0.2}),
+        _Scripted(categories={"Work": 0.6, "Idea": 0.8}),
+        _Scripted(categories={"Work": 0.3, "Idea": 0.5}),
     ]
 
     # 25,000 characters at the default 10,000-character window: three samples.
@@ -164,11 +166,13 @@ def test_long_note_is_sampled_window_by_window_and_averaged(
     sent = [len(call["state"]["note"]["content"]) for call in fake_typesafe.calls]
     assert sent == [10_000, 10_000, 5_000]
 
-    averages = {tag["name"]: tag["probability"] for tag in body_json["tags"]}
+    averages = {
+        category["name"]: category["probability"] for category in body_json["categories"]
+    }
     assert averages["Work"] == pytest.approx((0.9 + 0.6 + 0.3) / 3)
     assert averages["Idea"] == pytest.approx((0.2 + 0.8 + 0.5) / 3)
     # Average of the two, ranked: Work 0.60 beats Idea 0.50.
-    assert [tag["name"] for tag in body_json["tags"]] == ["Work", "Idea"]
+    assert [category["name"] for category in body_json["categories"]] == ["Work", "Idea"]
 
 
 def test_averaged_folder_is_the_mean_distribution(
@@ -197,11 +201,11 @@ def test_a_windows_failure_does_not_lose_the_rest(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
     """One bad window is skipped and reported, not fatal."""
-    account.post("/api/tags", json={"name": "Work"})
+    account.post("/api/categories", json={"name": "Work"})
     fake_typesafe.script = [
-        _Scripted(tags={"Work": 0.8}),
+        _Scripted(categories={"Work": 0.8}),
         _Scripted(error="upstream hiccup"),
-        _Scripted(tags={"Work": 0.4}),
+        _Scripted(categories={"Work": 0.4}),
     ]
     note = account.post("/api/notes", json={"title": "Long", "body": "y" * 25_000}).json()
 
@@ -209,7 +213,7 @@ def test_a_windows_failure_does_not_lose_the_rest(
 
     assert body["samples"] == 2
     assert body["samples_failed"] == 1
-    assert body["tags"][0]["probability"] == pytest.approx(0.6)
+    assert body["categories"][0]["probability"] == pytest.approx(0.6)
 
 
 def test_every_window_failing_is_a_502(
@@ -224,12 +228,12 @@ def test_every_window_failing_is_a_502(
     assert "TypeSafe request failed" in response.json()["detail"]
 
 
-def test_classify_returns_folder_and_ranked_tags(
+def test_classify_returns_folder_and_ranked_categories(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
     folder = account.post("/api/folders", json={"name": "Work"}).json()
     for name in ("Work", "Task", "Idea"):
-        account.post("/api/tags", json={"name": name})
+        account.post("/api/categories", json={"name": name})
     note = account.post(
         "/api/notes", json={"title": "Standup notes", "body": "Ship the release on Friday."}
     ).json()
@@ -241,29 +245,31 @@ def test_classify_returns_folder_and_ranked_tags(
     assert body["model"] == "jev-test"
     assert body["folder"] == {"folder_id": folder["id"], "path": "Work", "confidence": 0.91}
     assert body["asked_about_encrypted_content"] is False
-    # Only the user's own tags are candidates, ranked by probability.
-    assert [tag["name"] for tag in body["tags"]] == ["Work", "Task", "Idea"]
-    assert body["tag_threshold"] == 0.5
+    # Only the user's own categories are candidates, ranked by probability.
+    assert [category["name"] for category in body["categories"]] == ["Work", "Task", "Idea"]
+    assert body["category_threshold"] == 0.5
 
 
-def test_classify_asks_nothing_about_tags_in_an_empty_vault(
+def test_classify_asks_nothing_about_categories_in_an_empty_vault(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
-    """Jev selects among existing tags; it never invents one to suggest."""
+    """Jev selects among existing categories; it never invents one to suggest."""
     note = account.post("/api/notes", json={"title": "Note", "body": "Body"}).json()
 
     body = account.post(f"/api/notes/{note['id']}/classify", json={}).json()
 
-    assert body["tags"] == []
+    assert body["categories"] == []
     assert "folder" in fake_typesafe.calls[0]["questions"]
-    assert not [key for key in fake_typesafe.calls[0]["questions"] if key.startswith("tag:")]
+    assert not [
+        key for key in fake_typesafe.calls[0]["questions"] if key.startswith("category:")
+    ]
 
 
 def test_classify_sends_one_question_per_candidate(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
     account.post("/api/folders", json={"name": "Work"})
-    account.post("/api/tags", json={"name": "Work"})
+    account.post("/api/categories", json={"name": "Work"})
     note = account.post("/api/notes", json={"title": "Note", "body": "Body"}).json()
 
     account.post(f"/api/notes/{note['id']}/classify", json={})
@@ -273,20 +279,20 @@ def test_classify_sends_one_question_per_candidate(
     assert "folder" in questions
     assert questions["folder"].criteria["Work"] is None
     assert questions["folder"].criteria[NO_FOLDER] == "No existing folder fits this note."
-    assert any(key == "tag:Work" for key in questions)
+    assert any(key == "category:Work" for key in questions)
     assert call["state"]["note"]["title"] == "Note"
     assert call["state"]["note"]["content"] == "Body"
 
 
-def test_classify_asks_the_model_about_existing_tags_by_name(
+def test_classify_asks_the_model_about_existing_categories_by_name(
     account: TestClient, fake_typesafe: FakeTypeSafeClient
 ) -> None:
-    account.post("/api/tags", json={"name": "Taxes"})
+    account.post("/api/categories", json={"name": "Taxes"})
     note = account.post("/api/notes", json={"title": "Note", "body": "Body"}).json()
 
     account.post(f"/api/notes/{note['id']}/classify", json={})
 
-    candidates = fake_typesafe.calls[0]["state"]["tags"]
+    candidates = fake_typesafe.calls[0]["state"]["categories"]
     assert candidates[0] == {"name": "Taxes", "meaning": None}
 
 

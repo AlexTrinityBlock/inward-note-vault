@@ -17,12 +17,12 @@ from app.core.config import Settings
 # never forced into a wrong existing folder.
 NO_FOLDER = "__none__"
 
-# One request carries one Noul per candidate tag; keep the shortlist bounded.
-MAX_TAG_CANDIDATES = 24
+# One request carries one Noul per candidate category; keep the shortlist bounded.
+MAX_CATEGORY_CANDIDATES = 24
 
 # Suggestions at or above this probability are worth showing as accepted by
 # default. The UI treats it as a starting point, not a rule.
-TAG_THRESHOLD = 0.5
+CATEGORY_THRESHOLD = 0.5
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,11 +34,11 @@ class FolderOption:
 
 
 @dataclass(frozen=True, slots=True)
-class TagOption:
-    """One of the user's tags, offered as a candidate.
+class CategoryOption:
+    """One of the user's categories, offered as a candidate.
 
-    Candidates always come from the vault: Jev selects among tags the user has
-    created, and never invents one.
+    Candidates always come from the vault: Jev selects among categories the user
+    has created, and never invents one.
     """
 
     name: str
@@ -62,8 +62,8 @@ class FolderSuggestion:
 
 
 @dataclass(frozen=True, slots=True)
-class TagSuggestion:
-    """How strongly Jev associates the note with one of the user's tags."""
+class CategorySuggestion:
+    """How strongly Jev associates the note with one of the user's categories."""
 
     name: str
     probability: float
@@ -74,7 +74,7 @@ class Classification:
     """One Jev request's worth of suggestions."""
 
     folder: FolderSuggestion
-    tags: list[TagSuggestion]
+    categories: list[CategorySuggestion]
     model: str | None
 
 
@@ -120,24 +120,26 @@ def build_state(
     title: str | None,
     content: str,
     folders: Sequence[FolderOption],
-    tags: Sequence[TagOption],
+    categories: Sequence[CategoryOption],
 ) -> dict[str, Any]:
     """Assemble the state the questions are answered against."""
     return {
         "note": {"title": title or "", "content": content},
         "folders": [{"path": folder.path} for folder in folders],
-        "tags": [{"name": tag.name, "meaning": tag.description} for tag in tags],
+        "categories": [
+            {"name": category.name, "meaning": category.description} for category in categories
+        ],
     }
 
 
 def build_questions(
-    folders: Sequence[FolderOption], tags: Sequence[TagOption]
+    folders: Sequence[FolderOption], categories: Sequence[CategoryOption]
 ) -> dict[str, Choice | Noul]:
-    """Ask one folder choice and one yes/no question per candidate tag.
+    """Ask one folder choice and one yes/no question per candidate category.
 
     Independent questions travel together in a single request, so the folder
-    and tag judgments cost one round trip. Each tag gets its own Noul because
-    a note may belong to several tags at once.
+    and category judgments cost one round trip. Each category gets its own Noul
+    because a note may belong to several categories at once.
     """
     criteria, _ = _folder_criteria(folders)
     questions: dict[str, Choice | Noul] = {
@@ -151,12 +153,13 @@ def build_questions(
         )
     }
 
-    for tag in tags:
-        meaning = f" It means: {tag.description}" if tag.description else ""
-        questions[f"tag:{tag.name}"] = Noul(
+    for category in categories:
+        meaning = f" It means: {category.description}" if category.description else ""
+        questions[f"category:{category.name}"] = Noul(
             instructions=(
-                f"Does this note belong under the tag `{tag.name}`?{meaning} "
-                "Answer yes only when someone browsing that tag would expect to find this note."
+                f"Does this note belong under the category `{category.name}`?{meaning} "
+                "Answer yes only when someone browsing that category would expect to find "
+                "this note."
             )
         )
 
@@ -169,20 +172,22 @@ async def classify_note(
     title: str | None,
     content: str,
     folders: Sequence[FolderOption],
-    tags: Sequence[TagOption],
+    categories: Sequence[CategoryOption],
     model: str | None = None,
 ) -> Classification:
-    """Ask Jev about one window of a note: one folder, plus zero or more tags.
+    """Ask Jev about one window of a note: one folder, plus zero or more categories.
 
     Callers with a long note send several windows and average them with
     `average_classifications`.
     """
     folder_options = list(folders)
-    tag_options = list(tags)[:MAX_TAG_CANDIDATES]
+    category_options = list(categories)[:MAX_CATEGORY_CANDIDATES]
 
     response = await client.system_one(
-        state=build_state(title=title, content=content, folders=folders, tags=tag_options),
-        questions=build_questions(folder_options, tag_options),
+        state=build_state(
+            title=title, content=content, folders=folders, categories=category_options
+        ),
+        questions=build_questions(folder_options, category_options),
         model=model,
     )
 
@@ -199,11 +204,11 @@ async def classify_note(
         probabilities[stable_key] = probabilities.get(stable_key, 0.0) + float(probability)
 
     suggestions = [
-        TagSuggestion(
-            name=tag.name,
-            probability=float(response.nouls[f"tag:{tag.name}"].noul),
+        CategorySuggestion(
+            name=category.name,
+            probability=float(response.nouls[f"category:{category.name}"].noul),
         )
-        for tag in tag_options
+        for category in category_options
     ]
     suggestions.sort(key=lambda suggestion: suggestion.probability, reverse=True)
 
@@ -214,7 +219,7 @@ async def classify_note(
             confidence=float(folder_answer.confidence),
             probabilities=probabilities,
         ),
-        tags=suggestions,
+        categories=suggestions,
         model=getattr(response, "model", None),
     )
 
@@ -224,10 +229,10 @@ def average_classifications(
 ) -> Classification:
     """Average the judgments of several windows into one recommendation.
 
-    Every window saw the same questions, so a plain mean is well defined: tags
-    average their yes-probabilities, and the folder averages its option
-    distribution before the winner is taken. A tag or option a window did not
-    mention counts as zero.
+    Every window saw the same questions, so a plain mean is well defined:
+    categories average their yes-probabilities, and the folder averages its
+    option distribution before the winner is taken. A category or option a
+    window did not mention counts as zero.
     """
     if not results:
         raise ValueError("nothing to average")
@@ -236,19 +241,20 @@ def average_classifications(
 
     total = float(len(results))
 
-    tag_names: list[str] = []
-    tag_totals: dict[str, float] = {}
+    category_names: list[str] = []
+    category_totals: dict[str, float] = {}
     for result in results:
-        for suggestion in result.tags:
-            if suggestion.name not in tag_totals:
-                tag_totals[suggestion.name] = 0.0
-                tag_names.append(suggestion.name)
-            tag_totals[suggestion.name] += suggestion.probability
+        for suggestion in result.categories:
+            if suggestion.name not in category_totals:
+                category_totals[suggestion.name] = 0.0
+                category_names.append(suggestion.name)
+            category_totals[suggestion.name] += suggestion.probability
 
-    averaged_tags = [
-        TagSuggestion(name=name, probability=tag_totals[name] / total) for name in tag_names
+    averaged_categories = [
+        CategorySuggestion(name=name, probability=category_totals[name] / total)
+        for name in category_names
     ]
-    averaged_tags.sort(key=lambda suggestion: suggestion.probability, reverse=True)
+    averaged_categories.sort(key=lambda suggestion: suggestion.probability, reverse=True)
 
     folder_totals: dict[int | str, float] = {}
     for result in results:
@@ -266,6 +272,6 @@ def average_classifications(
             confidence=sum(result.folder.confidence for result in results) / total,
             probabilities={key: value / total for key, value in folder_totals.items()},
         ),
-        tags=averaged_tags,
+        categories=averaged_categories,
         model=results[0].model,
     )

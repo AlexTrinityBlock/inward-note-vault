@@ -64,7 +64,14 @@ def test_session_cookie_grants_and_revokes_access(account: TestClient) -> None:
 
 
 def test_protected_routes_require_a_session(client: TestClient) -> None:
-    for path in ("/api/notes", "/api/folders", "/api/tags", "/api/settings", "/api/crypto/profile"):
+    paths = (
+        "/api/notes",
+        "/api/folders",
+        "/api/categories",
+        "/api/settings",
+        "/api/crypto/profile",
+    )
+    for path in paths:
         assert client.get(path).status_code == 401, path
 
 

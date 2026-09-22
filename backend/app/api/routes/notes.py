@@ -16,10 +16,10 @@ from app import crud
 from app.api.deps import CurrentUser, SessionDep, SettingsDep, TypeSafeDep, reserve_classify_calls
 from app.core.limits import LimitExceeded, split_windows
 from app.core.typesafe import (
-    TAG_THRESHOLD,
+    CATEGORY_THRESHOLD,
+    CategoryOption,
     Classification,
     FolderOption,
-    TagOption,
     average_classifications,
     classify_note,
 )
@@ -42,7 +42,7 @@ class NoteCreate(BaseModel):
     iv: str | None = None
 
     folder_id: int | None = None
-    tags: list[str] = []
+    categories: list[str] = []
 
 
 class NoteUpdate(BaseModel):
@@ -54,7 +54,7 @@ class NoteUpdate(BaseModel):
     iv: str | None = None
     folder_id: int | None = None
     move: bool = False
-    tags: list[str] | None = None
+    categories: list[str] | None = None
 
 
 class NoteRead(BaseModel):
@@ -67,7 +67,7 @@ class NoteRead(BaseModel):
     ciphertext: str | None
     iv: str | None
     folder_id: int | None
-    tags: list[str]
+    categories: list[str]
     created_at: datetime
     updated_at: datetime
 
@@ -91,8 +91,8 @@ class FolderSuggestionRead(BaseModel):
     confidence: float
 
 
-class TagSuggestionRead(BaseModel):
-    """One of the user's tags with Jev's probability for it."""
+class CategorySuggestionRead(BaseModel):
+    """One of the user's categories with Jev's probability for it."""
 
     name: str
     probability: float
@@ -103,8 +103,8 @@ class ClassificationRead(BaseModel):
 
     model: str | None
     folder: FolderSuggestionRead
-    tags: list[TagSuggestionRead]
-    tag_threshold: float
+    categories: list[CategorySuggestionRead]
+    category_threshold: float
     asked_about_encrypted_content: bool
     # A long note is sampled in consecutive windows; the answers above are their
     # average. `samples_failed` counts windows Jev could not answer.
@@ -122,7 +122,7 @@ def _read(note: Note) -> NoteRead:
         ciphertext=note.ciphertext,
         iv=note.iv,
         folder_id=note.folder_id,
-        tags=[tag.name for tag in note.tags],
+        categories=[category.name for category in note.categories],
         created_at=note.created_at,
         updated_at=note.updated_at,
     )
@@ -158,10 +158,10 @@ def _validate_payload(
             )
 
 
-def _apply_tags(session: SessionDep, note: Note, names: list[str]) -> Note:
-    """Set a note's tags, reporting a vault limit as a validation error."""
+def _apply_categories(session: SessionDep, note: Note, names: list[str]) -> Note:
+    """Set a note's categories, reporting a vault limit as a validation error."""
     try:
-        return crud.set_note_tags(session, note, names)
+        return crud.set_note_categories(session, note, names)
     except LimitExceeded as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
@@ -179,7 +179,7 @@ def list_notes(
     _user: CurrentUser,
     notebook: Annotated[Notebook | None, Query()] = None,
     folder_id: Annotated[int | None, Query()] = None,
-    tag: Annotated[str | None, Query()] = None,
+    category: Annotated[str | None, Query()] = None,
     q: Annotated[
         str | None,
         Query(description="Search plain notes; encrypted notes cannot be searched server-side"),
@@ -187,12 +187,12 @@ def list_notes(
     limit: Annotated[int, Query(ge=1, le=500)] = 200,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[NoteRead]:
-    """List notes, newest first, with optional notebook/folder/tag/search filters."""
+    """List notes, newest first, with optional notebook/folder/category/search filters."""
     notes = crud.list_notes(
         session,
         notebook=notebook,
         folder_id=folder_id,
-        tag=tag,
+        category=category,
         query=q,
         limit=limit,
         offset=offset,
@@ -221,8 +221,8 @@ def create_note(payload: NoteCreate, session: SessionDep, _user: CurrentUser) ->
         iv=payload.iv if payload.notebook == NOTEBOOK_ENCRYPTED else None,
         folder_id=payload.folder_id,
     )
-    if payload.tags:
-        note = _apply_tags(session, note, payload.tags)
+    if payload.categories:
+        note = _apply_categories(session, note, payload.categories)
     return _read(note)
 
 
@@ -239,7 +239,7 @@ def get_note(note_id: int, session: SessionDep, _user: CurrentUser) -> NoteRead:
 def update_note(
     note_id: int, payload: NoteUpdate, session: SessionDep, _user: CurrentUser
 ) -> NoteRead:
-    """Update a note, its folder, or its tags."""
+    """Update a note, its folder, or its categories."""
     note = crud.get_note(session, note_id)
     if note is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
@@ -267,8 +267,8 @@ def update_note(
 
     if fields:
         note = crud.update_note(session, note, **fields)
-    if payload.tags is not None:
-        note = _apply_tags(session, note, payload.tags)
+    if payload.categories is not None:
+        note = _apply_categories(session, note, payload.categories)
     return _read(note)
 
 
@@ -290,7 +290,7 @@ async def classify(
     client: TypeSafeDep,
     _user: CurrentUser,
 ) -> ClassificationRead:
-    """Ask Jev where a note belongs: one folder, plus candidate tags.
+    """Ask Jev where a note belongs: one folder, plus candidate categories.
 
     Text longer than one window is sampled window by window and averaged. An
     encrypted note is only sent after the caller confirms (`consent`) that
@@ -322,9 +322,12 @@ async def classify(
         FolderOption(id=folder.id, path=paths[folder.id]) for folder in crud.list_folders(session)
     ]
 
-    # Candidates are the user's own tags. Jev selects from what exists; it never
-    # invents a tag, so an empty vault yields no tag questions.
-    candidates = [TagOption(name=tag.name, id=tag.id) for tag in crud.list_tags(session)]
+    # Candidates are the user's own categories. Jev selects from what exists; it
+    # never invents a category, so an empty vault yields no category questions.
+    candidates = [
+        CategoryOption(name=category.name, id=category.id)
+        for category in crud.list_categories(session)
+    ]
 
     # A note longer than one window is sampled window by window — Jev never sees
     # more than `classify_window_chars` at a time — and the answers are averaged,
@@ -334,7 +337,9 @@ async def classify(
 
     outcomes = await asyncio.gather(
         *(
-            classify_note(client, title=title, content=window, folders=folders, tags=candidates)
+            classify_note(
+                client, title=title, content=window, folders=folders, categories=candidates
+            )
             for window in windows
         ),
         return_exceptions=True,
@@ -358,11 +363,11 @@ async def classify(
             path=result.folder.path,
             confidence=result.folder.confidence,
         ),
-        tags=[
-            TagSuggestionRead(name=suggestion.name, probability=suggestion.probability)
-            for suggestion in result.tags
+        categories=[
+            CategorySuggestionRead(name=suggestion.name, probability=suggestion.probability)
+            for suggestion in result.categories
         ],
-        tag_threshold=TAG_THRESHOLD,
+        category_threshold=CATEGORY_THRESHOLD,
         asked_about_encrypted_content=note.notebook == NOTEBOOK_ENCRYPTED,
         samples=len(samples),
         samples_failed=len(failures),

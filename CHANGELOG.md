@@ -4,6 +4,80 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-23
+
+The interface is rebuilt around three tiers, and the "tag" concept is renamed to
+"category" from the database through to the last translation string.
+
+### Breaking
+
+- **`tag` is now `category` everywhere.** The `tags` table is `categories` and
+  `note_tags` is `note_categories` (column `tag_id` → `category_id`); the
+  endpoints moved from `/api/tags` to `/api/categories`; the note and
+  classification payloads carry `categories` instead of `tags`, and
+  `tag_threshold` is now `category_threshold`. An existing API consumer, script
+  or bookmark will need updating. An Alembic migration renames the tables and
+  columns in place and has a matching `downgrade()`; test it against a copy of
+  your database before upgrading.
+- `GET /api/notes?tag=<name>` no longer filters. FastAPI ignores unknown query
+  parameters, so the old spelling returns the **unfiltered** list rather than an
+  error. Use `?category=<name>`.
+
+### Added
+
+- **Three tiers, on real routes.** `/` picks a notebook, `/n/:notebook` is the
+  browser, `/n/:notebook/notes/:noteId` is one note on its own page, and
+  `/n/:notebook/categories` manages categories. The old
+  `/?notebook=encrypted` link redirects to `/n/encrypted`.
+- A Drive-style browser: folder cards with subtree note counts, note cards or a
+  sortable table, breadcrumbs, a sidebar directory with counts, a centre search
+  field, and a grid/list toggle.
+- A category management page built on the existing category table: rename,
+  delete, create, and a drill-down into the notes that carry a category.
+- Manual light/dark theme switching, remembered in `localStorage["inward.theme"]`
+  and applied before the first paint so a dark-mode reload does not flash white.
+- A toast provider and a promise-based confirm/prompt dialog, replacing the
+  browser's own `confirm()` and `prompt()` in four places.
+- A Markdown toolbar (bold, italic, H1–H3, quote, code, list, task, link, table)
+  and an editor footer with word, character and reading-time statistics.
+- The mobile drawer, the floating action button, and a read/write segmented
+  control for the phone layout.
+
+### Changed
+
+- **`frontend/src/index.css` is gone.** Styling now lives in
+  `frontend/src/styles/`: `tokens.css`, `base.css`, `layout.css`,
+  `components.css`, plus `utilities.css` and `migration.css` for what the design
+  source did not cover. The palette is the Vercel-style token set (`--canvas`,
+  `--ink`, `--hairline`, `--shadow-level-1..5`).
+- Geist and Geist Mono are loaded from Google Fonts with `preconnect`. They stay
+  optional: an offline install falls back to the system stack, which keeps a CJK
+  face ahead of the generic families because Geist has no Han glyphs.
+- Screen state — folder, category, search text, sort and view mode — lives in the
+  URL instead of component state, so a refresh lands where you were and the back
+  button walks back through what you opened.
+- Reading time and word count are counted per language: Latin words by
+  whitespace, CJK glyphs individually. A whitespace split reported a Chinese
+  paragraph as a single word.
+- Entering edit mode asks for confirmation **once per note per visit**. The
+  answer is remembered only for that note, is never persisted, and resets when
+  you switch notes or leave the screen.
+- The encrypted notebook's key is now held by a provider on the `/n/:notebook`
+  layout, so it survives moving between the drive, a category and a note. It is
+  still memory-only: a reload locks the notebook again.
+
+### Fixed
+
+- The editor counted words with `split(/\s+/)`, which reported a 500-character
+  Chinese paragraph as one word and a reading time of zero minutes.
+
+### Notes
+
+- The classification consent step for encrypted notes is unchanged and still
+  gates the one action that sends plaintext to TypeSafe.
+- `conftest.py` builds tables from metadata, so pytest never exercises the
+  migration path. Test the rename migration by hand against a database copy.
+
 ## [0.2.1] - 2026-09-20
 
 The vault now samples long notes through Jev instead of truncating them, Jev

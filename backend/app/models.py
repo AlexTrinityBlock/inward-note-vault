@@ -100,25 +100,27 @@ class Folder(TimestampMixin, Base):
     children: Mapped[list[Folder]] = relationship(back_populates="parent")
 
 
-class Tag(TimestampMixin, Base):
-    """A free-form tag shared by plain and encrypted notes."""
+class Category(TimestampMixin, Base):
+    """A free-form category shared by plain and encrypted notes."""
 
-    __tablename__ = "tags"
+    __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     # 50 characters: a label, not a sentence. See `app.core.limits`.
     name: Mapped[str] = mapped_column(String(50), unique=True)
 
 
-class NoteTag(Base):
-    """Association between notes and tags."""
+class NoteCategory(Base):
+    """Association between notes and categories."""
 
-    __tablename__ = "note_tags"
+    __tablename__ = "note_categories"
 
     note_id: Mapped[int] = mapped_column(
         ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True
     )
-    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id", ondelete="CASCADE"), primary_key=True
+    )
 
 
 class Note(TimestampMixin, Base):
@@ -145,7 +147,9 @@ class Note(TimestampMixin, Base):
     )
 
     folder: Mapped[Folder | None] = relationship()
-    tags: Mapped[list[Tag]] = relationship(secondary="note_tags", order_by="Tag.name")
+    categories: Mapped[list[Category]] = relationship(
+        secondary="note_categories", order_by="Category.name"
+    )
 
 
 class CryptoProfile(TimestampMixin, Base):
