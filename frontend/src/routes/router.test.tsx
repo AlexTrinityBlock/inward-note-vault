@@ -6,51 +6,9 @@
  * which is exactly how `/settings` broke once. The API is stubbed, so this
  * exercises the client's own composition rather than a backend.
  */
-import { afterAll, beforeAll, expect, test } from "bun:test";
-import { Window } from "happy-dom";
+import { expect, test } from "bun:test";
 
-const dom = new Window({ url: "http://localhost/" });
-
-beforeAll(() => {
-  // React, and our own hooks, read these as bare globals rather than off
-  // `window`, so every one the app touches has to be forwarded.
-  const globals = globalThis as unknown as Record<string, unknown>;
-  globals.window = dom;
-  globals.document = dom.document;
-  globals.navigator = dom.navigator;
-  globals.localStorage = dom.localStorage;
-  globals.HTMLElement = dom.HTMLElement;
-  globals.Element = dom.Element;
-  globals.Node = dom.Node;
-  globals.MouseEvent = dom.MouseEvent;
-  globals.KeyboardEvent = dom.KeyboardEvent;
-  globals.Event = dom.Event;
-  globals.getComputedStyle = dom.getComputedStyle.bind(dom);
-  globals.requestAnimationFrame = (callback: FrameRequestCallback) =>
-    setTimeout(() => callback(Date.now()), 0) as unknown as number;
-  globals.cancelAnimationFrame = (handle: number) => clearTimeout(handle);
-  globals.IS_REACT_ACT_ENVIRONMENT = true;
-
-  const mediaQuery = (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    dispatchEvent: () => false,
-  });
-  dom.matchMedia = mediaQuery as unknown as typeof dom.matchMedia;
-  globals.matchMedia = mediaQuery;
-
-  // The theme resolves from localStorage during the first render.
-  dom.localStorage.setItem("inward.theme", "light");
-});
-
-afterAll(() => {
-  dom.close();
-});
+import "./test-dom";
 
 /** The smallest API surface these routes touch. */
 function stubFetch(): void {

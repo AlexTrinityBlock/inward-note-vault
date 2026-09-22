@@ -97,8 +97,16 @@ export function useEditMode(noteId: number, startInEdit = false): EditModeValue 
     return false;
   }, [dialog, editing, isPhone, mobileMode, t]);
 
+  /**
+   * Go back to reading.
+   *
+   * The remembered answer is deliberately kept: the design asks once per note
+   * per visit, so going back to reading and in again within the same visit is
+   * silent. Clearing it here would re-ask on every toggle, which is the friction
+   * the rule exists to remove. It resets when the note changes or the screen
+   * unmounts.
+   */
   const exitEditMode = useCallback(() => {
-    editUnlocked.current = false;
     setEditing(false);
     setMobileModeState("read");
   }, []);
@@ -106,6 +114,7 @@ export function useEditMode(noteId: number, startInEdit = false): EditModeValue 
   const setMobileMode = useCallback(
     (mode: MobileMode) => {
       if (mode === "write") {
+        // Same gate as the desktop Edit button: silent once answered.
         void requestEnterEditMode();
         return;
       }

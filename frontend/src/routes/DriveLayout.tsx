@@ -3,7 +3,6 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
-  useCreateFolder,
   useCreateNote,
   useListCategories,
   useListFolders,
@@ -16,7 +15,6 @@ import { Icon } from "../components/Icon";
 import { LockedNotebook } from "../components/LockedNotebook";
 import { SearchBox } from "../components/SearchBox";
 import { UnlockDialog } from "../components/UnlockDialog";
-import { useToast } from "../components/Toast";
 import { useDecryptedNotes } from "../hooks/useDecryptedNotes";
 import { useDriveParams } from "../hooks/useDriveParams";
 import { useEncryptedNotebook } from "../hooks/useEncryptedNotebook";
@@ -63,7 +61,6 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const toast = useToast();
   const encryptedNotebook = useEncryptedNotebook();
   const drive = useDriveParams();
 
@@ -98,7 +95,6 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
   const decrypted = useDecryptedNotes(allNotes, encryptedNotebook.key);
 
   const createNote = useCreateNote();
-  const createFolder = useCreateFolder();
 
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries();
@@ -145,15 +141,6 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
     [createNote, encryptedNotebook.key, locked, notebook, openUnlock, refresh, t],
   );
 
-  const addFolder = useCallback(
-    async (name: string, parentId: number | null) => {
-      await createFolder.mutateAsync({ data: { name, parent_id: parentId } });
-      toast.success(t("toast.folderCreated"));
-      await refresh();
-    },
-    [createFolder, refresh, t, toast],
-  );
-
   const context: DriveOutletContext = {
     notebook,
     folders,
@@ -176,9 +163,20 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
   // The sidebar highlights whichever directory the current screen belongs to.
   const activeSection = location.pathname.endsWith("/categories") ? "categories" : "folders";
 
+  /**
+   * A single note brings its own header, because editing needs Save / Read mode
+   * / the phone's read-write switch, and that row is specific to the editor.
+   * Rendering this layout's bar above it as well stacks two headers whose action
+   * rows overlap, which is how the Edit button ends up visible but not
+   * clickable. So the editor gets the whole screen, exactly as the design's
+   * `#workspace-screen` does.
+   */
+  const isNoteScreen = /\/notes\/[^/]+$/.test(location.pathname);
+
   return (
     <div className="drive-app-container">
-      <AppHeader
+      {isNoteScreen ? null : (
+        <AppHeader
         leading={
           <>
             <button
@@ -201,7 +199,8 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
             </button>
           </>
         }
-      />
+        />
+      )}
 
       {locked ? (
         <LockedNotebook
@@ -220,24 +219,17 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
             folders={folders}
             categories={categories}
             activeSection={activeSection}
-            activeFolderId={drive.folderId}
-            activeCategory={drive.category}
             open={drawerOpen}
-            onSelectFolder={(id) => {
-              drive.setFolder(id);
+            onOpenFolders={() => {
               setDrawerOpen(false);
+              drive.setFolder(null);
+              drive.setCategory(null);
               navigate(`/n/${notebook}`);
             }}
             onOpenCategories={() => {
               setDrawerOpen(false);
               navigate(`/n/${notebook}/categories`);
             }}
-            onSelectCategory={(name) => {
-              setDrawerOpen(false);
-              navigate(`/n/${notebook}`);
-              drive.setCategory(name);
-            }}
-            onCreateFolder={addFolder}
             onNewNote={() => {
               void addNote(drive.folderId).then((id) => {
                 if (id !== null) {
@@ -255,14 +247,6 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
                     value={drive.q}
                     onChange={drive.setSearch}
                     placeholder={t("drive.searchPlaceholder")}
-                    // Which side does the searching differs by notebook, and a
-                    // reader should not have to guess whether their ciphertext
-                    // went to a server.
-                    hint={
-                      notebook === "encrypted"
-                        ? t("drive.searchEncryptedHint")
-                        : t("drive.searchPlainHint")
-                    }
                   />
                 </div>
               </div>

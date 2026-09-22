@@ -214,31 +214,7 @@
   margin: 0;
 }
 
-.card-bottom {
-  width: 100%;
-}
-
-/* Vercel 100px Pill CTA Buttons */
-.card-action-btn {
-  width: 100%;
-  height: 44px;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: var(--radius-pill);
-  background: var(--primary);
-  color: var(--on-primary);
-  border: 1px solid var(--primary);
-}
-
-.card-action-btn:hover {
-  background: #000000;
-}
-
-[data-theme="dark"] .card-action-btn:hover {
-  background: #eaeaea;
-}
-
-.portal-footer {
+[data-theme="dark"] .portal-footer {
   text-align: center;
   font-family: var(--font-mono);
   font-size: 12px;

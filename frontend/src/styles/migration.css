@@ -297,6 +297,19 @@
   margin-bottom: 12px;
 }
 
+/* The "New folder" / "Files (n)" pair beside a section title. */
+.drive-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drive-section-actions button {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+
 .drive-sections-container {
   display: flex;
   flex-direction: column;
@@ -360,14 +373,6 @@
   margin: 0 0 14px;
   font-size: 13px;
   color: var(--body);
-}
-
-.drive-search-hint {
-  display: block;
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--mute);
-  text-align: center;
 }
 
 /* Cards ------------------------------------------------------------------- */
@@ -750,7 +755,6 @@
 /* --------------------------------------------------------------------------
    11. Settings screen
    -------------------------------------------------------------------------- */
-
 .settings {
   flex: 1;
   min-height: 0;
@@ -819,5 +823,44 @@
   justify-content: center;
 }
 
+/* --------------------------------------------------------------------------
+   Portal cards
+   --------------------------------------------------------------------------
+   Each card is a `<button>`, so the whole surface is the hit target and the
+   keyboard can reach it. That means opting back out of the global button reset,
+   which would otherwise centre the content, cap the height at 36px, and paint
+   its own background over the card's.
+   -------------------------------------------------------------------------- */
 
+button.portal-card {
+  height: auto;
+  padding: 40px 32px 32px;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  text-align: center;
+}
 
+/* The reset's hover fill and press-scale are wrong for a card this size. */
+button.portal-card:hover:not(:disabled) {
+  background: var(--canvas);
+}
+
+button.portal-card:active:not(:disabled) {
+  transform: none;
+}
+
+button.portal-card:disabled {
+  opacity: 0.6;
+}
+
+.card-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.6px;
+}

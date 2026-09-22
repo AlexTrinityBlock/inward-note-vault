@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
-import { useDeleteFolder, useDeleteNote, useUpdateFolder, useUpdateNote } from "../client/generated";
+import {
+  useCreateFolder,
+  useDeleteFolder,
+  useDeleteNote,
+  useUpdateFolder,
+  useUpdateNote,
+} from "../client/generated";
 import type { FolderRead } from "../client/generated/models";
 import { FolderGrid } from "../components/drive/FolderGrid";
 import { Breadcrumbs } from "../components/drive/Breadcrumbs";
@@ -53,8 +59,10 @@ export function DriveRoute() {
 
   const renameFolder = useUpdateFolder();
   const removeFolder = useDeleteFolder();
+  const createFolder = useCreateFolder();
   const updateNote = useUpdateNote();
   const removeNote = useDeleteNote();
+  const creatingFolder = createFolder.isPending;
 
   /** The folder chain from the root down, for the breadcrumbs. */
   const trail = useMemo(
@@ -181,6 +189,23 @@ export function DriveRoute() {
     }
   }
 
+  /** Create a subfolder of wherever we are, inside the current folder. */
+  async function newFolder() {
+    const name = await dialog.prompt({
+      title: t("drive.newFolder"),
+      label: t("folders.namePlaceholder"),
+      confirmLabel: t("common.create"),
+      validate: (value) => (value === "" ? t("folders.namePlaceholder") : null),
+    });
+    if (name === null) {
+      return;
+    }
+    await createFolder.mutateAsync({ data: { name, parent_id: folderId } });
+    toast.success(t("toast.folderCreated"));
+    // Stay on the folder grid so the new card is visible where it was made.
+    await refresh();
+  }
+
   const crumbs = [
     { label: t("drive.rootCrumb"), onClick: () => setFolder(null) },
     ...(category !== null
@@ -227,12 +252,14 @@ export function DriveRoute() {
           <span className="drive-canvas-stats">
             {visibleFolders.length} {t("drive.statFolders")} • {views.length} {t("drive.statFiles")}
           </span>
-          <ViewControls
-            sort={drive.sort}
-            view={drive.view}
-            onSortChange={drive.setSort}
-            onViewChange={drive.setView}
-          />
+          {drive.scope === "files" ? (
+            <ViewControls
+              sort={drive.sort}
+              view={drive.view}
+              onSortChange={drive.setSort}
+              onViewChange={drive.setView}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -247,17 +274,66 @@ export function DriveRoute() {
 
       {loading ? (
         <p className="muted">{t("common.loading")}</p>
+      ) : drive.scope === "folders" ? (
+        /* Where can I go from here. */
+        visibleFolders.length === 0 ? (
+          <EmptyState
+            icon="folder"
+            title={t("folders.empty")}
+            body={t("drive.emptyBody")}
+          >
+            <button type="button" className="primary" onClick={() => void newFolder()}>
+              <Icon name="plus" size={14} />
+              <span>{t("drive.newFolder")}</span>
+            </button>
+          </EmptyState>
+        ) : (
+          <div className="drive-sections-container">
+            <section className="drive-section">
+              <div className="drive-section-header">
+                <h3 className="drive-section-title">{t("drive.folders")}</h3>
+                <div className="drive-section-actions">
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => void newFolder()}
+                    disabled={creatingFolder}
+                  >
+                    <Icon name="plus" size={14} />
+                    <span>{t("drive.newFolder")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => drive.setScope("files")}
+                  >
+                    <Icon name="file" size={14} />
+                    <span>
+                      {t("drive.files")} ({views.length})
+                    </span>
+                  </button>
+                </div>
+              </div>
+              <FolderGrid
+                folders={visibleFolders}
+                notes={notes}
+                onOpen={(id) => {
+                  setFolder(id);
+                  // Drilling in shows what the folder holds, which is the point
+                  // of opening it — the subfolders are one click away.
+                  drive.setScope("files");
+                }}
+                onRename={(folder) => void renameFolderTo(folder)}
+                onDelete={(folder) => void deleteFolder(folder)}
+              />
+            </section>
+          </div>
+        )
       ) : isEmpty ? (
         <EmptyState
           icon={searched ? "search" : "folder"}
           title={searched ? t("drive.noResults") : t("drive.emptyTitle")}
-          body={
-            searched
-              ? searchInBrowser
-                ? t("drive.searchEncryptedHint")
-                : t("drive.searchPlainHint")
-              : t("drive.emptyBody")
-          }
+          body={searched ? t("drive.noResults") : t("drive.emptyBody")}
         >
           {searched ? null : (
             <>
@@ -270,44 +346,35 @@ export function DriveRoute() {
         </EmptyState>
       ) : (
         <div className="drive-sections-container">
-          {visibleFolders.length > 0 ? (
-            <section className="drive-section">
-              <div className="drive-section-header">
-                <h3 className="drive-section-title">{t("drive.folders")}</h3>
-              </div>
-              <FolderGrid
-                folders={visibleFolders}
-                notes={notes}
-                onOpen={setFolder}
-                onRename={(folder) => void renameFolderTo(folder)}
-                onDelete={(folder) => void deleteFolder(folder)}
+          <section className="drive-section">
+            <div className="drive-section-header">
+              <h3 className="drive-section-title">{t("drive.sectionFiles")}</h3>
+              {visibleFolders.length > 0 ? (
+                <button type="button" className="ghost" onClick={() => drive.setScope("folders")}>
+                  <Icon name="folder" size={14} />
+                  <span>
+                    {t("drive.folders")} ({visibleFolders.length})
+                  </span>
+                </button>
+              ) : null}
+            </div>
+            {drive.view === "grid" ? (
+              <FileGrid
+                notes={views}
+                onOpen={(id) => navigate(`/n/${notebook}/notes/${id}`)}
+                onRename={(view) => void renameNoteFrom(view)}
+                onDelete={(view) => void deleteNote(view.note.id)}
               />
-            </section>
-          ) : null}
-
-          {views.length > 0 ? (
-            <section className="drive-section">
-              <div className="drive-section-header">
-                <h3 className="drive-section-title">{t("drive.sectionFiles")}</h3>
-              </div>
-              {drive.view === "grid" ? (
-                <FileGrid
-                  notes={views}
-                  onOpen={(id) => navigate(`/n/${notebook}/notes/${id}`)}
-                  onRename={(view) => void renameNoteFrom(view)}
-                  onDelete={(view) => void deleteNote(view.note.id)}
-                />
-              ) : (
-                <FileTable
-                  notes={views}
-                  folders={folders}
-                  onOpen={(id) => navigate(`/n/${notebook}/notes/${id}`)}
-                  onRename={(view) => void renameNoteFrom(view)}
-                  onDelete={(view) => void deleteNote(view.note.id)}
-                />
-              )}
-            </section>
-          ) : null}
+            ) : (
+              <FileTable
+                notes={views}
+                folders={folders}
+                onOpen={(id) => navigate(`/n/${notebook}/notes/${id}`)}
+                onRename={(view) => void renameNoteFrom(view)}
+                onDelete={(view) => void deleteNote(view.note.id)}
+              />
+            )}
+          </section>
         </div>
       )}
 

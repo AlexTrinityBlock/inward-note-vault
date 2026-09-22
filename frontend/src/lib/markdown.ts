@@ -6,12 +6,28 @@
  * anywhere the API is reachable. Centralizing it keeps the two call sites from
  * drifting apart — a card that forgot to sanitize would be an XSS hole.
  */
-import DOMPurify from "dompurify";
+import createDOMPurify from "dompurify";
 import { marked } from "marked";
+
+/**
+ * A sanitizer bound to the document, resolved on first use.
+ *
+ * `dompurify`'s default export binds to whatever `window` exists when the module
+ * is evaluated, and in a browser that is always the right one. Under a test
+ * runner it is a trap: the first module to import this one decides, and a module
+ * imported before the DOM is installed leaves `sanitize` undefined for every
+ * later caller. Resolving at call time removes the ordering dependency.
+ */
+let purifier: ReturnType<typeof createDOMPurify> | null = null;
+
+function sanitizer(): ReturnType<typeof createDOMPurify> {
+  purifier ??= createDOMPurify(window);
+  return purifier;
+}
 
 /** Render Markdown to sanitized HTML. */
 export function renderMarkdown(source: string): string {
-  return DOMPurify.sanitize(marked.parse(source, { async: false }) as string);
+  return sanitizer().sanitize(marked.parse(source, { async: false }) as string);
 }
 
 /**

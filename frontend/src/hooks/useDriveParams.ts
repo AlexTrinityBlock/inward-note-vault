@@ -23,6 +23,22 @@ export function isViewMode(value: string | null): value is ViewMode {
 }
 
 /**
+ * What the canvas is showing inside the current folder: its subfolders, or the
+ * notes it holds.
+ *
+ * The sidebar used to render the whole folder tree and every category, which
+ * stops working as soon as a vault is real — two unbounded lists competing in
+ * one narrow column. Browsing moved onto the canvas instead, one level at a
+ * time, and this is the switch between "where can I go" and "what is in here".
+ */
+export const SCOPES = ["folders", "files"] as const;
+export type Scope = (typeof SCOPES)[number];
+
+export function isScope(value: string | null): value is Scope {
+  return value !== null && (SCOPES as readonly string[]).includes(value);
+}
+
+/**
  * Driving the drive screen from the URL.
  *
  * Which notebook, which folder, which category, the search text, the ordering
@@ -42,9 +58,12 @@ export function useDriveParams() {
   const q = params.get("q") ?? "";
   const rawSort = params.get("sort");
   const rawView = params.get("view");
+  const rawScope = params.get("show");
 
   const sort: SortKey = isSortKey(rawSort) ? rawSort : "updated";
   const view: ViewMode = isViewMode(rawView) ? rawView : "grid";
+  // A search always means notes, so it forces the file scope.
+  const scope: Scope = q.trim() !== "" ? "files" : isScope(rawScope) ? rawScope : "folders";
 
   function update(changes: Record<string, string | null>) {
     setParams(
@@ -70,6 +89,7 @@ export function useDriveParams() {
     q,
     sort,
     view,
+    scope,
     /** Select a folder, clearing any category drill-down. */
     setFolder: (id: number | null) => update({ folder: id === null ? null : String(id), category: null }),
     /** Select a category, clearing the folder. */
@@ -77,6 +97,7 @@ export function useDriveParams() {
     setSearch: (value: string) => update({ q: value }),
     setSort: (value: SortKey) => update({ sort: value === "updated" ? null : value }),
     setView: (value: ViewMode) => update({ view: value === "grid" ? null : value }),
+    setScope: (value: Scope) => update({ show: value === "folders" ? null : value }),
   };
 }
 

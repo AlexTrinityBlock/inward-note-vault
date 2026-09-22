@@ -68,52 +68,45 @@ export function PortalRoute() {
         </div>
 
         <div className="portal-grid">
-          <div className="portal-card plain">
-            <div className="card-top">
-              <div className="card-icon-wrapper">
+          {/*
+            The whole card is the target. It carries no button of its own: a
+            nested "Open" label looked like the only clickable part while the
+            card around it already lifted on hover, so a click on the title did
+            nothing. The card is a `<button>`, which also makes it reachable by
+            keyboard and announced as one control.
+          */}
+          <button
+            type="button"
+            className="portal-card plain"
+            onClick={() => navigate("/n/plain")}
+          >
+            <span className="card-top">
+              <span className="card-icon-wrapper">
                 <Icon name="file" size={32} />
-              </div>
-              <div className="card-title-group">
-                <h3>{t("portal.plainTitle")}</h3>
-                <p className="card-description">{t("portal.plainBody")}</p>
-              </div>
-            </div>
-            <div className="card-bottom">
-              <button
-                type="button"
-                className="primary card-action-btn"
-                onClick={() => navigate("/n/plain")}
-              >
-                <span>{t("portal.openPlain")}</span>
-                <Icon name="chevron-right" size={16} />
-              </button>
-            </div>
-          </div>
+              </span>
+              <span className="card-title-group">
+                <span className="card-title">{t("portal.plainTitle")}</span>
+                <span className="card-description">{t("portal.plainBody")}</span>
+              </span>
+            </span>
+          </button>
 
-          <div className="portal-card encrypted">
-            <div className="card-top">
-              <div className="card-icon-wrapper">
+          <button
+            type="button"
+            className="portal-card encrypted"
+            onClick={openEncrypted}
+            disabled={notebook.loading}
+          >
+            <span className="card-top">
+              <span className="card-icon-wrapper">
                 <Icon name={notebook.unlocked ? "unlock" : "lock"} size={32} />
-              </div>
-              <div className="card-title-group">
-                <h3>{t("portal.encryptedTitle")}</h3>
-                <p className="card-description">{t("portal.encryptedBody")}</p>
-              </div>
-            </div>
-            <div className="card-bottom">
-              <button
-                type="button"
-                className="card-action-btn"
-                onClick={openEncrypted}
-                disabled={notebook.loading}
-              >
-                <span>
-                  {hasProfile ? t("portal.unlockEncrypted") : t("portal.createEncrypted")}
-                </span>
-                <Icon name="chevron-right" size={16} />
-              </button>
-            </div>
-          </div>
+              </span>
+              <span className="card-title-group">
+                <span className="card-title">{t("portal.encryptedTitle")}</span>
+                <span className="card-description">{t("portal.encryptedBody")}</span>
+              </span>
+            </span>
+          </button>
         </div>
       </main>
 

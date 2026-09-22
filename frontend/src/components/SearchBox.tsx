@@ -5,18 +5,17 @@ type SearchBoxProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
-  /** Shown under the field: which notebook is being searched, and where. */
-  hint?: string;
 };
 
 /**
  * The centre search field.
  *
  * Which side does the searching differs by notebook — the server for plain
- * notes, the browser for encrypted ones — so the hint under the field says
- * which, rather than letting a reader assume their ciphertext reached a server.
+ * notes, the browser for encrypted ones — and the field used to say so in a line
+ * under it. That line is gone: it explained machinery the reader does not need,
+ * and the empty state already gives the reason when a search finds nothing.
  */
-export function SearchBox({ value, onChange, placeholder, hint }: SearchBoxProps) {
+export function SearchBox({ value, onChange, placeholder }: SearchBoxProps) {
   const { t } = useI18n();
 
   return (
@@ -41,7 +40,6 @@ export function SearchBox({ value, onChange, placeholder, hint }: SearchBoxProps
           <Icon name="close" size={13} />
         </button>
       ) : null}
-      {hint ? <span className="drive-search-hint">{hint}</span> : null}
     </div>
   );
 }
