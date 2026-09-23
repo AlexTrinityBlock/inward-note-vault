@@ -1,7 +1,7 @@
 import type { NoteRead } from "../../client/generated/models";
 import { useI18n } from "../../i18n";
 import type { NoteSecret } from "../../lib/crypto";
-import { markdownSnippet } from "../../lib/markdown";
+import { modKey } from "../../lib/platform";
 import { formatAbsolute, formatRelativeTime } from "../../lib/time";
 import { Icon } from "../Icon";
 import { DropdownMenu } from "./DropdownMenu";
@@ -15,8 +15,15 @@ export type NoteView = {
 
 type FileActions = {
   onOpen: (noteId: number) => void;
+  onSelect?: (noteId: number) => void;
+  selectedNoteId?: number | null;
+  cutNoteId?: number | null;
   /** Omitted where acting on a single note makes no sense, such as a drill-down. */
   onRename?: (view: NoteView) => void;
+  onMove?: (view: NoteView) => void;
+  onMakeCopy?: (view: NoteView) => void;
+  onCopy?: (view: NoteView) => void;
+  onCut?: (view: NoteView) => void;
   onDelete?: (view: NoteView) => void;
 };
 
@@ -39,25 +46,35 @@ export function noteTitle(view: NoteView, t: ReturnType<typeof useI18n>["t"]): s
 }
 
 /** The file section as preview cards. */
-export function FileGrid({ notes, ...actions }: { notes: NoteView[] } & FileActions) {
+export function FileGrid({
+  notes,
+  selectedNoteId,
+  cutNoteId,
+  onSelect,
+  ...actions
+}: { notes: NoteView[] } & FileActions) {
   const { t, locale } = useI18n();
 
   return (
     <div className="drive-files-grid">
       {notes.map((view) => {
-        const snippet = view.secret
-          ? markdownSnippet(view.secret.body)
-          : view.note.notebook === "plain"
-            ? markdownSnippet(view.note.body ?? "")
-            : "";
+        const isSelected = selectedNoteId === view.note.id;
+        const isCut = cutNoteId === view.note.id;
 
         return (
           <div
             key={view.note.id}
-            className="note-card"
+            className={`note-card${isSelected ? " selected" : ""}${isCut ? " cut" : ""}`}
             role="button"
             tabIndex={0}
-            onClick={() => actions.onOpen(view.note.id)}
+            onClick={() => {
+              if (onSelect) {
+                onSelect(view.note.id);
+              } else {
+                actions.onOpen(view.note.id);
+              }
+            }}
+            onDoubleClick={() => actions.onOpen(view.note.id)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
@@ -69,16 +86,55 @@ export function FileGrid({ notes, ...actions }: { notes: NoteView[] } & FileActi
               <div className="drive-file-card-icon">
                 <Icon name={view.note.notebook === "encrypted" ? "lock" : "file"} size={16} />
               </div>
-              {actions.onRename || actions.onDelete ? (
+              {actions.onRename || actions.onMove || actions.onMakeCopy || actions.onCopy || actions.onCut || actions.onDelete ? (
                 <DropdownMenu
                   label={t("drive.openMenu")}
+                  onOpenMenu={() => onSelect?.(view.note.id)}
                   items={[
                     ...(actions.onRename
                       ? [
                           {
-                            label: t("drive.renameNote"),
+                            label: t("drive.rename"),
                             icon: <Icon name="edit" size={14} />,
                             onSelect: () => actions.onRename?.(view),
+                          },
+                        ]
+                      : []),
+                    ...(actions.onMove
+                      ? [
+                          {
+                            label: t("drive.move"),
+                            icon: <Icon name="move" size={14} />,
+                            onSelect: () => actions.onMove?.(view),
+                          },
+                        ]
+                      : []),
+                    ...(actions.onMakeCopy
+                      ? [
+                          {
+                            label: t("drive.makeCopy"),
+                            icon: <Icon name="copy" size={14} />,
+                            onSelect: () => actions.onMakeCopy?.(view),
+                          },
+                        ]
+                      : []),
+                    ...(actions.onCopy
+                      ? [
+                          {
+                            label: t("drive.copy"),
+                            icon: <Icon name="copy" size={14} />,
+                            shortcut: `${modKey}C`,
+                            onSelect: () => actions.onCopy?.(view),
+                          },
+                        ]
+                      : []),
+                    ...(actions.onCut
+                      ? [
+                          {
+                            label: t("drive.cut"),
+                            icon: <Icon name="scissors" size={14} />,
+                            shortcut: `${modKey}X`,
+                            onSelect: () => actions.onCut?.(view),
                           },
                         ]
                       : []),
@@ -98,8 +154,9 @@ export function FileGrid({ notes, ...actions }: { notes: NoteView[] } & FileActi
             </div>
 
             <div className="note-card-main">
-              <div className="note-card-title">{noteTitle(view, t)}</div>
-              {snippet ? <p className="note-card-snippet">{snippet}</p> : null}
+              <div className="note-card-title" title={noteTitle(view, t)}>
+                {noteTitle(view, t)}
+              </div>
             </div>
 
             <div className="note-card-footer">

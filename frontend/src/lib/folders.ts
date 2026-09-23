@@ -10,7 +10,7 @@ export function buildFolderTree(folders: FolderRead[]): FolderNode[] {
   const roots: FolderNode[] = [];
 
   for (const node of nodes.values()) {
-    const parent = node.parent_id === null ? undefined : nodes.get(node.parent_id);
+    const parent = node.parent_id == null ? undefined : nodes.get(node.parent_id);
     if (parent) {
       parent.children.push(node);
     } else {
@@ -19,7 +19,7 @@ export function buildFolderTree(folders: FolderRead[]): FolderNode[] {
   }
 
   const sortByName = (list: FolderNode[]): void => {
-    list.sort((left, right) => left.name.localeCompare(right.name));
+    list.sort((left, right) => (left.name ?? "").localeCompare(right.name ?? ""));
     for (const node of list) {
       sortByName(node.children);
     }
@@ -33,7 +33,7 @@ export function buildFolderTree(folders: FolderRead[]): FolderNode[] {
 export function folderSubtreeIds(folders: FolderRead[], folderId: number): number[] {
   const childrenOf = new Map<number, number[]>();
   for (const folder of folders) {
-    if (folder.parent_id === null) continue;
+    if (folder.parent_id == null) continue;
     childrenOf.set(folder.parent_id, [...(childrenOf.get(folder.parent_id) ?? []), folder.id]);
   }
 
@@ -63,7 +63,7 @@ export function folderTrail(folders: FolderRead[], folderId: number): FolderRead
   while (current && !seen.has(current.id)) {
     seen.add(current.id);
     trail.unshift(current);
-    current = current.parent_id === null ? undefined : byId.get(current.parent_id);
+    current = current.parent_id == null ? undefined : byId.get(current.parent_id);
   }
   return trail;
 }

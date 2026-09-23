@@ -27,7 +27,8 @@ import type {
   FolderCreate,
   FolderRead,
   FolderUpdate,
-  HTTPValidationError
+  HTTPValidationError,
+  ListFoldersParams
 } from '../models';
 
 import { apiFetch } from '../../http';
@@ -52,21 +53,28 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export const getListFoldersUrl = () => {
+export const getListFoldersUrl = (params?: ListFoldersParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/folders`
+  return stringifiedParams.length > 0 ? `/api/folders?${stringifiedParams}` : `/api/folders`
 }
 
 /**
- * List every folder, flat, with its path.
+ * List folders, optionally filtered by notebook.
  * @summary List Folders
  */
-export const listFolders = async ( options?: Parameters<typeof apiFetch>[1]): Promise<FolderRead[]> => {
+export const listFolders = async (params?: ListFoldersParams, options?: Parameters<typeof apiFetch>[1]): Promise<FolderRead[]> => {
 
-  return apiFetch<FolderRead[]>(getListFoldersUrl(),
+  return apiFetch<FolderRead[]>(getListFoldersUrl(params),
   {
     ...options,
     method: 'GET'
@@ -79,23 +87,23 @@ export const listFolders = async ( options?: Parameters<typeof apiFetch>[1]): Pr
 
 
 
-export const getListFoldersQueryKey = () => {
+export const getListFoldersQueryKey = (params?: ListFoldersParams,) => {
     return [
-    `/api/folders`
+    `/api/folders`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListFoldersQueryOptions = <TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+export const getListFoldersQueryOptions = <TData = Awaited<ReturnType<typeof listFolders>>, TError = HTTPValidationError>(params?: ListFoldersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListFoldersQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListFoldersQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFolders>>> = ({ signal }) => listFolders({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFolders>>> = ({ signal }) => listFolders(params, { signal, ...requestOptions });
 
 
 
@@ -105,11 +113,11 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListFoldersQueryResult = NonNullable<Awaited<ReturnType<typeof listFolders>>>
-export type ListFoldersQueryError = unknown
+export type ListFoldersQueryError = HTTPValidationError
 
 
-export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>> & Pick<
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = HTTPValidationError>(
+ params: undefined |  ListFoldersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof listFolders>>,
           TError,
@@ -118,8 +126,8 @@ export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, 
       >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>> & Pick<
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = HTTPValidationError>(
+ params?: ListFoldersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof listFolders>>,
           TError,
@@ -128,20 +136,20 @@ export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, 
       >, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = HTTPValidationError>(
+ params?: ListFoldersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List Folders
  */
 
-export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+export function useListFolders<TData = Awaited<ReturnType<typeof listFolders>>, TError = HTTPValidationError>(
+ params?: ListFoldersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFolders>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getListFoldersQueryOptions(options)
+  const queryOptions = getListFoldersQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

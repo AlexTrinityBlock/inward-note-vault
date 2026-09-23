@@ -4,15 +4,15 @@
  * inward-note-vault
  * OpenAPI spec version: 0.1.0
  */
+import type { FolderCreateNotebook } from './folderCreateNotebook';
 
 /**
  * Payload for creating a folder.
  */
 export interface FolderCreate {
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  name: string;
+  notebook?: FolderCreateNotebook;
+  name?: string | null;
+  ciphertext?: string | null;
+  iv?: string | null;
   parent_id?: number | null;
 }

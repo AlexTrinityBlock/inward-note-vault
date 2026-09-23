@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { NoteRead } from "../client/generated/models";
 import { openNote, type NoteSecret } from "../lib/crypto";
@@ -15,6 +15,7 @@ export function useDecryptedNotes(
   key: CryptoKey | null,
 ): Record<number, NoteSecret> {
   const [secrets, setSecrets] = useState<Record<number, NoteSecret>>({});
+  const cacheRef = useRef<Map<string, NoteSecret>>(new Map());
 
   const signature = useMemo(
     () =>
@@ -28,6 +29,7 @@ export function useDecryptedNotes(
   useEffect(() => {
     if (!key || signature === "") {
       setSecrets({});
+      cacheRef.current.clear();
       return;
     }
 
@@ -38,16 +40,36 @@ export function useDecryptedNotes(
 
     void (async () => {
       const next: Record<number, NoteSecret> = {};
+      const toDecrypt: { note: NoteRead; versionKey: string }[] = [];
+
       for (const note of encrypted) {
-        try {
-          next[note.id] = await openNote(key, {
-            ciphertext: note.ciphertext ?? "",
-            iv: note.iv ?? "",
-          });
-        } catch {
-          // A note that cannot be opened stays locked in the list.
+        const versionKey = `${note.id}:${note.updated_at}`;
+        const cached = cacheRef.current.get(versionKey);
+        if (cached) {
+          next[note.id] = cached;
+        } else {
+          toDecrypt.push({ note, versionKey });
         }
       }
+
+      if (toDecrypt.length > 0) {
+        await Promise.all(
+          toDecrypt.map(async ({ note, versionKey }) => {
+            try {
+              const opened = await openNote(key, {
+                ciphertext: note.ciphertext ?? "",
+                iv: note.iv ?? "",
+              });
+              next[note.id] = opened;
+              cacheRef.current.set(versionKey, opened);
+            } catch (err) {
+              console.error("Failed to decrypt note:", note.id, err);
+              // A note that cannot be opened stays locked in the list.
+            }
+          }),
+        );
+      }
+
       if (!cancelled) {
         setSecrets(next);
       }

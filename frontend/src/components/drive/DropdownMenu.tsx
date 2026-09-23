@@ -6,6 +6,7 @@ import { Icon } from "../Icon";
 export type MenuItem = {
   label: string;
   icon?: ReactNode;
+  shortcut?: string;
   danger?: boolean;
   onSelect: () => void;
 };
@@ -19,7 +20,15 @@ export type MenuItem = {
  * it off-screen, so the open direction is left to the stylesheet's overflow
  * rather than computed here.
  */
-export function DropdownMenu({ items, label }: { items: MenuItem[]; label: string }) {
+export function DropdownMenu({
+  items,
+  label,
+  onOpenMenu,
+}: {
+  items: MenuItem[];
+  label: string;
+  onOpenMenu?: () => void;
+}) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
@@ -50,7 +59,7 @@ export function DropdownMenu({ items, label }: { items: MenuItem[]; label: strin
     <div className="drive-item-action-wrapper" ref={container}>
       <button
         type="button"
-        className="drive-item-more-btn"
+        className={`drive-item-more-btn${open ? " active" : ""}`}
         title={label}
         aria-label={label}
         aria-haspopup="menu"
@@ -59,6 +68,7 @@ export function DropdownMenu({ items, label }: { items: MenuItem[]; label: strin
           // The card around this button is clickable; the menu is not a choice
           // of card.
           event.stopPropagation();
+          onOpenMenu?.();
           setOpen((current) => !current);
         }}
       >
@@ -66,7 +76,7 @@ export function DropdownMenu({ items, label }: { items: MenuItem[]; label: strin
       </button>
 
       {open ? (
-        <div className="drive-item-dropdown" role="menu">
+        <div className="drive-item-dropdown show" role="menu">
           {items.map((item) => (
             <button
               key={item.label}
@@ -79,8 +89,13 @@ export function DropdownMenu({ items, label }: { items: MenuItem[]; label: strin
                 item.onSelect();
               }}
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <span className="drive-menu-item-left">
+                {item.icon}
+                <span>{item.label}</span>
+              </span>
+              {item.shortcut ? (
+                <span className="drive-menu-item-shortcut">{item.shortcut}</span>
+              ) : null}
             </button>
           ))}
         </div>

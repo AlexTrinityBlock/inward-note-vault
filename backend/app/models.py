@@ -86,12 +86,22 @@ class Setting(TimestampMixin, Base):
 
 
 class Folder(TimestampMixin, Base):
-    """A notebook folder, nested through `parent_id`."""
+    """A notebook folder, nested through `parent_id`.
+
+    Plain folders store `name`. Encrypted folders store `ciphertext` and `iv`,
+    so the server never learns the folder name.
+    """
 
     __tablename__ = "folders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(120))
+    notebook: Mapped[str] = mapped_column(String(16), default=NOTEBOOK_PLAIN, index=True)
+    name: Mapped[str | None] = mapped_column(Text, default=None)
+
+    # AES-GCM payload produced in the browser, plus its nonce. Base64.
+    ciphertext: Mapped[str | None] = mapped_column(Text, default=None)
+    iv: Mapped[str | None] = mapped_column(String(64), default=None)
+
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("folders.id", ondelete="SET NULL"), default=None, index=True
     )
@@ -135,7 +145,7 @@ class Note(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     notebook: Mapped[str] = mapped_column(String(16), default=NOTEBOOK_PLAIN, index=True)
 
-    title: Mapped[str | None] = mapped_column(String(200), default=None)
+    title: Mapped[str | None] = mapped_column(Text, default=None)
     body: Mapped[str | None] = mapped_column(Text, default=None)
 
     # AES-GCM payload produced in the browser, plus its nonce. Base64.

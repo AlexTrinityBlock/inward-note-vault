@@ -15,6 +15,7 @@ import { Icon } from "../components/Icon";
 import { LockedNotebook } from "../components/LockedNotebook";
 import { SearchBox } from "../components/SearchBox";
 import { UnlockDialog } from "../components/UnlockDialog";
+import { useDecryptedFolders } from "../hooks/useDecryptedFolders";
 import { useDecryptedNotes } from "../hooks/useDecryptedNotes";
 import { useDriveParams } from "../hooks/useDriveParams";
 import { useEncryptedNotebook } from "../hooks/useEncryptedNotebook";
@@ -47,6 +48,8 @@ export type DriveOutletContext = {
   createNote: (folderId?: number | null, categories?: string[]) => Promise<number | null>;
   creating: boolean;
   refresh: () => Promise<void>;
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 };
 
 /**
@@ -65,11 +68,21 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
   const drive = useDriveParams();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("inward:sidebarCollapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [showUnlock, setShowUnlock] = useState(false);
 
   const locked = notebook === "encrypted" && !encryptedNotebook.unlocked;
 
-  const foldersQuery = useListFolders();
+  const foldersQuery = useListFolders(
+    { notebook },
+    { query: { enabled: !locked } },
+  );
   const categoriesQuery = useListCategories();
 
   // A locked notebook must not even ask the server for its notes: without the
@@ -88,7 +101,8 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
     { query: { enabled: !locked } },
   );
 
-  const folders = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
+  const rawFolders = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
+  const folders = useDecryptedFolders(rawFolders, encryptedNotebook.key);
   const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const allNotes = useMemo(() => notesQuery.data ?? [], [notesQuery.data]);
 
@@ -101,6 +115,16 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
   }, [queryClient]);
 
   const openUnlock = useCallback(() => setShowUnlock(true), []);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("inward:sidebarCollapsed", String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   const addNote = useCallback(
     async (folderId: number | null = null, categoriesForNote: string[] = []) => {
@@ -158,6 +182,8 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
     createNote: addNote,
     creating: createNote.isPending,
     refresh,
+    sidebarCollapsed,
+    toggleSidebar,
   };
 
   // The sidebar highlights whichever directory the current screen belongs to.
@@ -177,28 +203,34 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
     <div className="drive-app-container">
       {isNoteScreen ? null : (
         <AppHeader
-        leading={
-          <>
-            <button
-              type="button"
-              className="drive-icon-btn ghost mobile-only"
-              title={t("drive.toggleSidebar")}
-              aria-label={t("drive.toggleSidebar")}
-              onClick={() => setDrawerOpen((open) => !open)}
-            >
-              <Icon name="menu" size={20} />
-            </button>
-            <button
-              type="button"
-              className="drive-icon-btn ghost"
-              title={t("drive.backToVaults")}
-              aria-label={t("drive.backToVaults")}
-              onClick={() => navigate("/")}
-            >
-              <Icon name="arrow-left" size={18} />
-            </button>
-          </>
-        }
+          leading={
+            <>
+              <button
+                type="button"
+                className="drive-icon-btn ghost"
+                title={t("drive.toggleSidebar")}
+                aria-label={t("drive.toggleSidebar")}
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.innerWidth <= 768) {
+                    setDrawerOpen((open) => !open);
+                  } else {
+                    toggleSidebar();
+                  }
+                }}
+              >
+                <Icon name="menu" size={20} />
+              </button>
+              <button
+                type="button"
+                className="drive-icon-btn ghost"
+                title={t("drive.backToVaults")}
+                aria-label={t("drive.backToVaults")}
+                onClick={() => navigate("/")}
+              >
+                <Icon name="arrow-left" size={18} />
+              </button>
+            </>
+          }
         />
       )}
 
@@ -208,7 +240,7 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
           onUnlock={openUnlock}
         />
       ) : (
-        <div className="drive-layout">
+        <div className={`drive-layout${isNoteScreen ? " note-mode" : ""}`}>
           <div
             className={`drive-drawer-backdrop mobile-only${drawerOpen ? " open" : ""}`}
             role="presentation"
@@ -220,6 +252,8 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
             categories={categories}
             activeSection={activeSection}
             open={drawerOpen}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={toggleSidebar}
             onOpenFolders={() => {
               setDrawerOpen(false);
               drive.setFolder(null);
@@ -233,14 +267,14 @@ export function DriveLayout({ notebook }: { notebook: Notebook }) {
             onNewNote={() => {
               void addNote(drive.folderId).then((id) => {
                 if (id !== null) {
-                  navigate(`/n/${notebook}/notes/${id}`);
+                  navigate(`/n/${notebook}/notes/${id}?mode=edit`);
                 }
               });
             }}
           />
 
-          <main className="drive-main-canvas">
-            {location.pathname === `/n/${notebook}` || activeSection === "categories" ? (
+          <main className={`drive-main-canvas${isNoteScreen ? " note-mode" : ""}`}>
+            {!isNoteScreen ? (
               <div className="drive-canvas-header">
                 <div className="drive-header-center">
                   <SearchBox

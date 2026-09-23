@@ -19,7 +19,8 @@
     "marked": "^18.0.13",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "sugar-high": "^2.4.1"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",

@@ -7,7 +7,8 @@
  * drifting apart — a card that forgot to sanitize would be an XSS hole.
  */
 import createDOMPurify from "dompurify";
-import { marked } from "marked";
+import { Marked } from "marked";
+import { highlight } from "sugar-high";
 
 /**
  * A sanitizer bound to the document, resolved on first use.
@@ -25,9 +26,33 @@ function sanitizer(): ReturnType<typeof createDOMPurify> {
   return purifier;
 }
 
-/** Render Markdown to sanitized HTML. */
+/**
+ * Custom Marked instance with Sugar-High syntax highlighting
+ */
+const markdownParser = new Marked({
+  async: false,
+  gfm: true,
+  breaks: true,
+  renderer: {
+    code({ text, lang }: { text: string; lang?: string }) {
+      const language = lang?.trim() || "plaintext";
+
+      // Sugar-high generates tokenized HTML with standard `.sh__*` classes
+      const highlightedHtml = highlight(text);
+
+      return `\n<pre class="sh__code" data-language="${language}"><code>${highlightedHtml}</code></pre>`;
+    },
+  },
+});
+
+/**
+ * Parse Markdown to secure HTML with syntax highlighting
+ */
 export function renderMarkdown(source: string): string {
-  return sanitizer().sanitize(marked.parse(source, { async: false }) as string);
+  const rawHtml = markdownParser.parse(source) as string;
+  return sanitizer().sanitize(rawHtml, {
+    ADD_ATTR: ["target", "data-language"],
+  });
 }
 
 /**

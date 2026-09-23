@@ -9,6 +9,8 @@ type DriveSidebarProps = {
   activeSection: "folders" | "categories";
   /** Drives the slide-over drawer on a phone. */
   open: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
   onOpenFolders: () => void;
   onOpenCategories: () => void;
   onNewNote: () => void;
@@ -28,6 +30,8 @@ export function DriveSidebar({
   categories,
   activeSection,
   open,
+  collapsed = false,
+  onToggleCollapse,
   onOpenFolders,
   onOpenCategories,
   onNewNote,
@@ -52,7 +56,9 @@ export function DriveSidebar({
   ];
 
   return (
-    <aside className={`drive-sidebar${open ? " open drawer-open" : ""}`}>
+    <aside
+      className={`drive-sidebar${open ? " open drawer-open" : ""}${collapsed ? " collapsed" : ""}`}
+    >
       <div className="sidebar-action-header">
         <button
           type="button"
@@ -63,6 +69,17 @@ export function DriveSidebar({
           <Icon name="plus" size={15} />
           <span>{t("drive.newNote")}</span>
         </button>
+        {onToggleCollapse ? (
+          <button
+            type="button"
+            className="sidebar-collapse-btn desktop-only"
+            title={t("drive.toggleSidebar")}
+            aria-label={t("drive.toggleSidebar")}
+            onClick={onToggleCollapse}
+          >
+            <Icon name="chevron-left" size={16} />
+          </button>
+        ) : null}
       </div>
 
       <nav className="sidebar-directory" aria-label={t("drive.title")}>

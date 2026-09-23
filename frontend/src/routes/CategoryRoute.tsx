@@ -122,7 +122,7 @@ export function CategoryRoute() {
   async function newNoteIn(category: string) {
     const id = await createNote(null, [category]);
     if (id !== null) {
-      navigate(`/n/${notebook}/notes/${id}`);
+      navigate(`/n/${notebook}/notes/${id}?mode=edit`);
     }
   }
 

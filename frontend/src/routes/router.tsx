@@ -41,6 +41,7 @@ export const router = createBrowserRouter([
         element: <NotebookRoute />,
         children: [
           { index: true, element: <DriveRoute /> },
+          { path: "folders/:folderId", element: <DriveRoute /> },
           { path: "categories", element: <CategoryRoute /> },
           { path: "notes/:noteId", element: <NoteRoute /> },
         ],

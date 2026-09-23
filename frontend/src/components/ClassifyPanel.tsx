@@ -125,7 +125,7 @@ export function ClassifyPanel({
 
   return (
     <div
-      className="modal-overlay"
+      className="modal-overlay open"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {

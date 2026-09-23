@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import type { NoteRead } from "../client/generated/models";
 
@@ -51,9 +51,36 @@ export function isScope(value: string | null): value is Scope {
  */
 export function useDriveParams() {
   const [params, setParams] = useSearchParams();
+  const { notebook, folderId: routeFolderId } = useParams<{ notebook?: string; folderId?: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const folderPathMatch = location.pathname.match(/\/folders\/(\d+)/);
+  const pathFolderId =
+    routeFolderId && /^\d+$/.test(routeFolderId)
+      ? Number(routeFolderId)
+      : folderPathMatch
+      ? Number(folderPathMatch[1])
+      : null;
 
   const rawFolder = params.get("folder");
-  const folderId = rawFolder !== null && /^\d+$/.test(rawFolder) ? Number(rawFolder) : null;
+  const queryFolderId = rawFolder !== null && /^\d+$/.test(rawFolder) ? Number(rawFolder) : null;
+
+  const folderId = pathFolderId !== null ? pathFolderId : queryFolderId;
+
+  const currentNotebook = notebook || location.pathname.match(/\/n\/([^/]+)/)?.[1] || "plain";
+
+  // Redirect legacy query parameter ?folder=2 to RESTful /n/:notebook/folders/2
+  useEffect(() => {
+    if (queryFolderId !== null && currentNotebook) {
+      const next = new URLSearchParams(params);
+      next.delete("folder");
+      const qs = next.toString();
+      const searchPart = qs ? `?${qs}` : "";
+      navigate(`/n/${currentNotebook}/folders/${queryFolderId}${searchPart}`, { replace: true });
+    }
+  }, [queryFolderId, currentNotebook, params, navigate]);
+
   const category = params.get("category");
   const q = params.get("q") ?? "";
   const rawSort = params.get("sort");
@@ -83,6 +110,32 @@ export function useDriveParams() {
     );
   }
 
+  function setFolder(id: number | null) {
+    const next = new URLSearchParams(params);
+    next.delete("folder");
+    next.delete("category");
+    const qs = next.toString();
+    const searchPart = qs ? `?${qs}` : "";
+    if (id === null) {
+      navigate(`/n/${currentNotebook}${searchPart}`);
+    } else {
+      navigate(`/n/${currentNotebook}/folders/${id}${searchPart}`);
+    }
+  }
+
+  function setCategory(name: string | null) {
+    const next = new URLSearchParams(params);
+    next.delete("folder");
+    if (name === null) {
+      next.delete("category");
+    } else {
+      next.set("category", name);
+    }
+    const qs = next.toString();
+    const searchPart = qs ? `?${qs}` : "";
+    navigate(`/n/${currentNotebook}${searchPart}`);
+  }
+
   return {
     folderId,
     category,
@@ -90,10 +143,8 @@ export function useDriveParams() {
     sort,
     view,
     scope,
-    /** Select a folder, clearing any category drill-down. */
-    setFolder: (id: number | null) => update({ folder: id === null ? null : String(id), category: null }),
-    /** Select a category, clearing the folder. */
-    setCategory: (name: string | null) => update({ category: name, folder: null }),
+    setFolder,
+    setCategory,
     setSearch: (value: string) => update({ q: value }),
     setSort: (value: SortKey) => update({ sort: value === "updated" ? null : value }),
     setView: (value: ViewMode) => update({ view: value === "grid" ? null : value }),

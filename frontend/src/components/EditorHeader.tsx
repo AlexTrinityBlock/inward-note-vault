@@ -12,12 +12,15 @@ type EditorHeaderProps = {
   onToggleEdit: () => void;
   onSave: () => void;
   onClassify: () => void;
+  onMove?: () => void;
   onDelete: () => void;
   saveState: SaveState;
   saving: boolean;
   /** Shown only while a phone is in read mode. */
   mobileMode: "read" | "write";
   onMobileModeChange: (mode: "read" | "write") => void;
+  onToggleSidebar?: () => void;
+  notebook?: "plain" | "encrypted";
 };
 
 /**
@@ -36,11 +39,14 @@ export function EditorHeader({
   onToggleEdit,
   onSave,
   onClassify,
+  onMove,
   onDelete,
   saveState,
   saving,
   mobileMode,
   onMobileModeChange,
+  onToggleSidebar,
+  notebook,
 }: EditorHeaderProps) {
   const { t } = useI18n();
 
@@ -48,10 +54,35 @@ export function EditorHeader({
     <header className="app-header">
       <div className="app-header-main">
         <div className="header-left">
+          {onToggleSidebar ? (
+            <button
+              type="button"
+              className="drive-icon-btn ghost"
+              title={t("drive.toggleSidebar")}
+              aria-label={t("drive.toggleSidebar")}
+              onClick={onToggleSidebar}
+            >
+              <Icon name="menu" size={18} />
+            </button>
+          ) : null}
+
           <button type="button" className="back-home-btn" title={t("drive.backToFolders")} onClick={onBack}>
             <Icon name="arrow-left" size={15} />
             <span>{t("common.back")}</span>
           </button>
+
+          {notebook ? (
+            <div
+              className={`current-vault-indicator${notebook === "encrypted" ? " encrypted" : ""}`}
+            >
+              <span className="vault-mini-badge">
+                <Icon name={notebook === "encrypted" ? "lock" : "file"} size={11} />
+              </span>
+              <span>
+                {notebook === "encrypted" ? t("notes.encryptedNotebook") : t("notes.plainNotebook")}
+              </span>
+            </div>
+          ) : null}
 
           <div className="header-divider" />
 
@@ -103,6 +134,18 @@ export function EditorHeader({
             <Icon name="sparkles" size={14} />
             <span>{t("editor.autoCategory")}</span>
           </button>
+
+          {onMove ? (
+            <button
+              type="button"
+              className="ghost compact-btn"
+              title={t("drive.move")}
+              onClick={onMove}
+            >
+              <Icon name="move" size={14} />
+              <span>{t("drive.move")}</span>
+            </button>
+          ) : null}
 
           <button
             type="button"

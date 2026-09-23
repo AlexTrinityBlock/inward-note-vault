@@ -297,6 +297,10 @@
   overflow: hidden;
 }
 
+.drive-layout.note-mode {
+  height: 100vh;
+}
+
 /* Left Sidebar (Google Drive Navigation) */
 .drive-sidebar {
   width: 256px;
@@ -315,16 +319,46 @@
 .drive-sidebar.collapsed {
   width: 0 !important;
   min-width: 0 !important;
-  padding: 20px 0 !important;
-  border-right: 1px solid transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-right: none !important;
   overflow: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  visibility: hidden;
 }
 
 /* Sidebar Action Header & New Note */
 .sidebar-action-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 24px;
+}
+
+.sidebar-new-note-action {
+  flex: 1;
+}
+
+.sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  color: var(--mute);
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--canvas-soft);
+  color: var(--ink);
+  border-color: var(--hairline-strong);
 }
 
 /* Category Edit Page Styles */
@@ -359,6 +393,12 @@
   background: var(--canvas);
   overflow-y: auto;
   padding: 20px 32px 80px;
+}
+
+.drive-main-canvas.note-mode {
+  padding: 0 !important;
+  overflow: hidden !important;
+  height: 100% !important;
 }
 
 .drive-canvas-header {
@@ -562,7 +602,7 @@
   display: flex;
   flex-direction: column;
   background: var(--canvas);
-  height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -570,7 +610,7 @@
 .editor-panes {
   flex: 1;
   display: flex;
-  height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -824,6 +864,10 @@
     overflow: hidden !important;
   }
 
+  .drive-layout.note-mode {
+    height: 100vh !important;
+  }
+
   /* Slide-Out Navigation Drawer */
   .drive-sidebar {
     position: fixed !important;
@@ -874,6 +918,12 @@
     padding: 14px 12px 90px 12px !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+  }
+
+  .drive-main-canvas.note-mode {
+    padding: 0 !important;
+    overflow: hidden !important;
+    height: 100% !important;
   }
 
   .drive-canvas-header {

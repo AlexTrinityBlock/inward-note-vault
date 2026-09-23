@@ -170,11 +170,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 10px 24px;
+  gap: 12px;
+  flex-wrap: nowrap;
+  height: 30px;
+  min-height: 30px;
+  max-height: 30px;
+  padding: 0 16px;
   border-top: 1px solid var(--hairline);
   background: var(--canvas);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  font-size: 11px;
+  overflow: hidden;
 }
 
 .editor-footer-stats {
@@ -219,22 +226,54 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex: 1;
   min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.category-picker::-webkit-scrollbar {
+  display: none;
 }
 
 .category-picker-label {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--mute);
   flex-shrink: 0;
 }
 
+.editor-meta-bar .muted.small {
+  font-size: 11px;
+  color: var(--mute-2);
+  white-space: nowrap;
+}
+
+.editor-meta-bar .category-chips {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 0;
+}
+
+.editor-meta-bar .category-chip {
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
 .category-picker-input {
-  width: 150px;
-  height: 28px;
-  font-size: 12px;
-  padding: 0 8px;
+  width: 120px;
+  height: 22px;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
 }
 
 .category-chip-remove {
@@ -488,7 +527,9 @@
 }
 
 .category-card-name {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
   width: 100%;
   height: auto;
   padding: 0;
@@ -501,7 +542,9 @@
   letter-spacing: -0.2px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .category-card-name:hover:not(:disabled) {
@@ -863,4 +906,18 @@ button.portal-card:disabled {
   font-weight: 600;
   line-height: 28px;
   letter-spacing: -0.6px;
+}
+
+/* Modals and dropdowns rendered conditionally in React */
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-overlay.open .modal-card {
+  transform: scale(1);
+}
+
+.drive-item-dropdown.show {
+  display: flex;
 }

@@ -4,13 +4,17 @@
  * inward-note-vault
  * OpenAPI spec version: 0.1.0
  */
+import type { FolderReadNotebook } from './folderReadNotebook';
 
 /**
- * A folder plus its readable path.
+ * A folder plus its readable path and encryption fields.
  */
 export interface FolderRead {
   id: number;
-  name: string;
-  parent_id: number | null;
-  path: string;
+  notebook: FolderReadNotebook;
+  name?: string | null;
+  parent_id?: number | null;
+  path?: string;
+  ciphertext?: string | null;
+  iv?: string | null;
 }

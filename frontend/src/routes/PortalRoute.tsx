@@ -62,9 +62,7 @@ export function PortalRoute() {
 
       <main className="portal-body">
         <div className="portal-hero">
-          <div className="hero-eyebrow">{t("portal.eyebrow")}</div>
           <h1 className="portal-title">{t("portal.title")}</h1>
-          <p className="portal-subtitle">{t("portal.subtitle")}</p>
         </div>
 
         <div className="portal-grid">
@@ -86,7 +84,6 @@ export function PortalRoute() {
               </span>
               <span className="card-title-group">
                 <span className="card-title">{t("portal.plainTitle")}</span>
-                <span className="card-description">{t("portal.plainBody")}</span>
               </span>
             </span>
           </button>
@@ -103,7 +100,6 @@ export function PortalRoute() {
               </span>
               <span className="card-title-group">
                 <span className="card-title">{t("portal.encryptedTitle")}</span>
-                <span className="card-description">{t("portal.encryptedBody")}</span>
               </span>
             </span>
           </button>

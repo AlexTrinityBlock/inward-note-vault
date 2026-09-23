@@ -145,9 +145,12 @@ def setting_enabled(session: Session, key: str, *, default: bool = False) -> boo
 # --------------------------------------------------------------------------- #
 
 
-def list_folders(session: Session) -> list[Folder]:
-    """All folders, ordered by name."""
-    return list(session.scalars(select(Folder).order_by(Folder.name)))
+def list_folders(session: Session, *, notebook: str | None = None) -> list[Folder]:
+    """All folders, ordered by name, optionally filtered by notebook."""
+    stmt = select(Folder)
+    if notebook is not None:
+        stmt = stmt.where(Folder.notebook == notebook)
+    return list(session.scalars(stmt.order_by(Folder.name, Folder.id)))
 
 
 def get_folder(session: Session, folder_id: int) -> Folder | None:
@@ -155,9 +158,23 @@ def get_folder(session: Session, folder_id: int) -> Folder | None:
     return session.get(Folder, folder_id)
 
 
-def create_folder(session: Session, *, name: str, parent_id: int | None = None) -> Folder:
+def create_folder(
+    session: Session,
+    *,
+    notebook: str = NOTEBOOK_PLAIN,
+    name: str | None = None,
+    ciphertext: str | None = None,
+    iv: str | None = None,
+    parent_id: int | None = None,
+) -> Folder:
     """Create a folder, optionally nested under another."""
-    folder = Folder(name=name, parent_id=parent_id)
+    folder = Folder(
+        notebook=notebook,
+        name=name,
+        ciphertext=ciphertext,
+        iv=iv,
+        parent_id=parent_id,
+    )
     session.add(folder)
     session.commit()
     session.refresh(folder)
@@ -169,12 +186,18 @@ def update_folder(
     folder: Folder,
     *,
     name: str | None = None,
+    ciphertext: str | None = None,
+    iv: str | None = None,
     parent_id: int | None = None,
     move: bool = False,
 ) -> Folder:
     """Rename and/or move a folder."""
     if name is not None:
         folder.name = name
+    if ciphertext is not None:
+        folder.ciphertext = ciphertext
+    if iv is not None:
+        folder.iv = iv
     if move:
         folder.parent_id = parent_id
     session.commit()
@@ -207,9 +230,9 @@ def delete_folder(session: Session, folder: Folder) -> None:
     session.commit()
 
 
-def folder_paths(session: Session) -> dict[int, str]:
+def folder_paths(session: Session, *, notebook: str | None = None) -> dict[int, str]:
     """Map every folder id to a readable `Parent/Child` path."""
-    folders = {folder.id: folder for folder in list_folders(session)}
+    folders = {folder.id: folder for folder in list_folders(session, notebook=notebook)}
     paths: dict[int, str] = {}
 
     for folder_id in folders:
@@ -220,7 +243,8 @@ def folder_paths(session: Session) -> dict[int, str]:
             folder = folders.get(current)
             if folder is None:
                 break
-            parts.append(folder.name)
+            if folder.name:
+                parts.append(folder.name)
             current = folder.parent_id
             guard += 1
         paths[folder_id] = "/".join(reversed(parts))

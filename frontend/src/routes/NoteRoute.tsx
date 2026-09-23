@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useParams, useSearchParams } from "react-router-dom";
 
-import { useDeleteNote, useGetSettings, useUpdateNote } from "../client/generated";
+import { useDeleteNote, useUpdateNote } from "../client/generated";
 import { CategoryPicker } from "../components/CategoryPicker";
 import { ClassifyPanel } from "../components/ClassifyPanel";
 import { Breadcrumbs } from "../components/drive/Breadcrumbs";
+import { MoveDialog } from "../components/drive/MoveDialog";
 import { useDialog } from "../components/Dialog";
-import { EditorFooter } from "../components/EditorFooter";
 import { EditorHeader } from "../components/EditorHeader";
 import { EditorPanes } from "../components/EditorPanes";
 import type { SaveState } from "../components/StatusPill";
@@ -38,7 +38,7 @@ export function NoteRoute() {
   const { noteId: rawNoteId } = useParams<{ noteId: string }>();
   const noteId = Number(rawNoteId);
 
-  const { notebook, folders, categories, notes, decrypted, refresh } =
+  const { notebook, folders, categories, notes, decrypted, refresh, toggleSidebar } =
     useOutletContext<DriveOutletContext>();
   const encryptedNotebook = useEncryptedNotebook();
 
@@ -47,7 +47,6 @@ export function NoteRoute() {
 
   const updateNote = useUpdateNote();
   const removeNote = useDeleteNote();
-  const settings = useGetSettings();
 
   // A note created from the drive arrives already in edit mode; the flag travels
   // in the URL so reloading does not silently drop the reader into read mode.
@@ -63,27 +62,46 @@ export function NoteRoute() {
   const [dirty, setDirty] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [classifyOpen, setClassifyOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  /** Notes already offered to Jev automatically, so a save never re-asks. */
-  const autoClassified = useRef<Set<number>>(new Set());
 
-  const serverVersion = note?.updated_at ?? "";
-  const loadedVersion = useRef<string>("");
+  const loadedNoteId = useRef<number | null>(null);
 
-  // Re-sync with the server when the note changed behind our back — applying
-  // Jev's suggestions, for instance. The `dirty` guard keeps an in-progress
-  // draft from being overwritten underneath the reader.
+  // When switching notes, reset loadedNoteId and dirty state
   useEffect(() => {
-    if (!note || dirty || loadedVersion.current === serverVersion) {
+    if (loadedNoteId.current !== noteId) {
+      loadedNoteId.current = null;
+      setDirty(false);
+      setSaveState("saved");
+    }
+  }, [noteId]);
+
+  // Initial load of note content into local editor state.
+  // Once loaded for a noteId, local title and body state are authoritative
+  // and must never be overwritten by background syncs or save completions.
+  useEffect(() => {
+    if (!note || loadedNoteId.current === noteId || dirty) {
       return;
     }
-    loadedVersion.current = serverVersion;
+    if (note.notebook === "encrypted" && !secret) {
+      return;
+    }
+    loadedNoteId.current = noteId;
     setTitle(secret ? secret.title : (note.title ?? ""));
     setBody(secret ? secret.body : (note.body ?? ""));
     setSelected(note.categories ?? []);
     setNoteFolderId(note.folder_id);
     setSaveState("saved");
-  }, [note, secret, serverVersion, dirty]);
+  }, [note, secret, noteId, dirty]);
+
+  // Synchronize folder_id and categories if changed by MoveDialog or Classify
+  useEffect(() => {
+    if (!note || loadedNoteId.current !== noteId) {
+      return;
+    }
+    setSelected(note.categories ?? []);
+    setNoteFolderId(note.folder_id);
+  }, [note?.folder_id, note?.categories, noteId]);
 
   const key = encryptedNotebook.key;
 
@@ -96,6 +114,7 @@ export function NoteRoute() {
       if (note.notebook === "encrypted") {
         if (!key) {
           setSaveState("failed");
+          toast.error(t("toast.failed"));
           return;
         }
         const sealed = await sealNote(key, { title, body });
@@ -123,23 +142,22 @@ export function NoteRoute() {
       }
       setDirty(false);
       setSaveState("saved");
+      toast.success(t("toast.saved"));
       await refresh();
-
-      // Auto-classify runs once per note, and only once there is something to
-      // read: an empty note would spend a request on nothing.
-      if (settings.data?.auto_classify_enabled && body.trim() !== "" && !autoClassified.current.has(note.id)) {
-        autoClassified.current.add(note.id);
-        setClassifyOpen(true);
-      }
     } catch {
       setSaveState("failed");
+      toast.error(t("toast.failed"));
     }
-  }, [body, key, note, noteFolderId, refresh, selected, settings.data?.auto_classify_enabled, title, updateNote]);
+  }, [body, key, note, noteFolderId, refresh, selected, t, title, toast, updateNote]);
 
-  // Ctrl/Cmd + S, the shortcut the footer advertises.
+  // Shortcut: Ctrl/Cmd + S to save in editor
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+      const isMod = event.metaKey || event.ctrlKey;
+      const key = event.key ? event.key.toLowerCase() : "";
+      const code = event.code;
+
+      if (isMod && (key === "s" || code === "KeyS")) {
         event.preventDefault();
         if (editMode.editing) {
           void save();
@@ -180,6 +198,7 @@ export function NoteRoute() {
         onToggleEdit={editMode.exitEditMode}
         onSave={() => void save()}
         onClassify={() => setClassifyOpen(true)}
+        onMove={() => setMoveOpen(true)}
         onDelete={() => {
           void dialog
             .confirm({
@@ -201,6 +220,8 @@ export function NoteRoute() {
         saving={updateNote.isPending}
         mobileMode={editMode.mobileMode}
         onMobileModeChange={editMode.setMobileMode}
+        onToggleSidebar={toggleSidebar}
+        notebook={note.notebook as "plain" | "encrypted"}
       />
 
       <div className="drive-canvas-header note-canvas-header">
@@ -208,8 +229,8 @@ export function NoteRoute() {
           trail={[
             { label: t("drive.rootCrumb"), onClick: () => navigate(`/n/${notebook}`) },
             ...trail.map((folder) => ({
-              label: folder.name,
-              onClick: () => navigate(`/n/${notebook}?folder=${folder.id}`),
+              label: folder.name ?? t("notes.untitled"),
+              onClick: () => navigate(`/n/${notebook}/folders/${folder.id}`),
             })),
             { label: displayTitle },
           ]}
@@ -235,29 +256,9 @@ export function NoteRoute() {
             setSelected(next);
             markDirty();
           }}
+          disabled={!editMode.editing}
         />
-
-        <label className="editor-folder-select">
-          <span>{t("editor.folderLabel")}</span>
-          <select
-            value={noteFolderId ?? ""}
-            disabled={!editMode.editing}
-            onChange={(event) => {
-              setNoteFolderId(event.target.value === "" ? null : Number(event.target.value));
-              markDirty();
-            }}
-          >
-            <option value="">{t("notes.noFolder")}</option>
-            {folders.map((folder) => (
-              <option key={folder.id} value={folder.id}>
-                {folder.path}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
-
-      <EditorFooter body={body} categories={selected} />
 
       {classifyOpen ? (
         <ClassifyPanel
@@ -273,12 +274,29 @@ export function NoteRoute() {
                 move: choice.move,
               },
             });
-            loadedVersion.current = "";
             await refresh();
           }}
           onClose={() => setClassifyOpen(false)}
         />
       ) : null}
+
+      <MoveDialog
+        isOpen={moveOpen}
+        itemTitle={displayTitle}
+        itemType="note"
+        currentFolderId={noteFolderId}
+        folders={folders}
+        onClose={() => setMoveOpen(false)}
+        onMove={async (targetFolderId) => {
+          await updateNote.mutateAsync({
+            noteId: note.id,
+            data: { folder_id: targetFolderId, move: true },
+          });
+          setNoteFolderId(targetFolderId);
+          toast.success(t("toast.moved"));
+          await refresh();
+        }}
+      />
     </div>
   );
 }

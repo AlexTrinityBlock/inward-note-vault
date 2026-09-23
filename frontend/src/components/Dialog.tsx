@@ -56,31 +56,40 @@ const DialogContext = createContext<DialogValue | null>(null);
  */
 export function DialogProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<PendingDialog | null>(null);
+  const pendingRef = useRef<PendingDialog | null>(null);
 
   const confirm = useCallback(
     (options: ConfirmOptions) =>
-      new Promise<boolean>((resolve) => setPending({ kind: "confirm", options, resolve })),
+      new Promise<boolean>((resolve) => {
+        const item: PendingDialog = { kind: "confirm", options, resolve };
+        pendingRef.current = item;
+        setPending(item);
+      }),
     [],
   );
 
   const prompt = useCallback(
     (options: PromptOptions) =>
-      new Promise<string | null>((resolve) => setPending({ kind: "prompt", options, resolve })),
+      new Promise<string | null>((resolve) => {
+        const item: PendingDialog = { kind: "prompt", options, resolve };
+        pendingRef.current = item;
+        setPending(item);
+      }),
     [],
   );
 
   const close = useCallback(
     (result: boolean | string | null) => {
-      setPending((current) => {
-        if (current) {
-          if (current.kind === "confirm") {
-            current.resolve(result === true);
-          } else {
-            current.resolve(typeof result === "string" ? result : null);
-          }
+      const current = pendingRef.current;
+      pendingRef.current = null;
+      setPending(null);
+      if (current) {
+        if (current.kind === "confirm") {
+          current.resolve(result === true);
+        } else {
+          current.resolve(typeof result === "string" ? result : null);
         }
-        return null;
-      });
+      }
     },
     [],
   );
@@ -150,7 +159,7 @@ function DialogModal({
 
   return (
     <div
-      className="modal-overlay"
+      className="modal-overlay open"
       role="presentation"
       onMouseDown={(event) => {
         // Only a click on the backdrop itself dismisses, not one that started

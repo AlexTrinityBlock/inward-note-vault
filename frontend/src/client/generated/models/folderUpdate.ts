@@ -13,6 +13,8 @@
  */
 export interface FolderUpdate {
   name?: string | null;
+  ciphertext?: string | null;
+  iv?: string | null;
   parent_id?: number | null;
   move?: boolean;
 }

@@ -120,7 +120,8 @@
 .drive-menu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
@@ -131,7 +132,22 @@
   cursor: pointer;
   text-align: left;
   width: 100%;
+  white-space: nowrap;
   transition: background 0.12s ease;
+}
+
+.drive-menu-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drive-menu-item-shortcut {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--mute);
+  margin-left: auto;
+  padding-left: 8px;
 }
 
 .drive-menu-item:hover {
@@ -348,9 +364,14 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .category-card-count {
@@ -460,9 +481,8 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 146px;
   min-height: 146px;
-  max-height: 146px;
+  height: auto;
   padding: 12px 14px;
   background: var(--canvas);
   border: 1px solid var(--hairline);
@@ -518,7 +538,7 @@
   color: var(--ink);
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
@@ -549,9 +569,8 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 146px;
   min-height: 146px;
-  max-height: 146px;
+  height: auto;
   background: var(--canvas);
   border: 1px solid var(--hairline);
   border-radius: 10px;
@@ -616,7 +635,7 @@
   color: var(--ink);
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
@@ -680,7 +699,8 @@
   position: absolute;
   top: 36px;
   right: 8px;
-  min-width: 120px;
+  min-width: 150px;
+  width: max-content;
   background: var(--canvas);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
@@ -747,6 +767,14 @@
   align-items: center;
   gap: 10px;
   font-weight: 500;
+}
+
+.drive-table-name span {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 /* Empty State */
@@ -1028,7 +1056,10 @@
   transition: var(--transition);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
+  min-height: 146px;
+  gap: 8px;
+  box-sizing: border-box;
 }
 
 .note-card:hover {
@@ -1045,25 +1076,20 @@
 .note-card-title {
   font-size: 14px;
   font-weight: 500;
-  line-height: 20px;
+  line-height: 1.45;
   letter-spacing: -0.28px;
   color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .note-card-snippet {
-  font-size: 13px;
-  color: var(--body);
-  line-height: 18px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: none !important;
 }
 
 .note-card-footer {
@@ -1073,7 +1099,11 @@
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--mute);
-  margin-top: 2px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .note-card-categories {
@@ -1279,6 +1309,24 @@
   color: inherit;
 }
 
+/* Sugar-High Syntax Highlighting */
+.markdown-body pre.sh__code {
+  position: relative;
+  --sh-class: #79c0ff;
+  --sh-identifier: #e6edf3;
+  --sh-sign: #7ee787;
+  --sh-property: #79c0ff;
+  --sh-entity: #ff7b72;
+  --sh-jsxliterals: #a5d6ff;
+  --sh-string: #a5d6ff;
+  --sh-keyword: #ff7b72;
+  --sh-comment: #8b949e;
+}
+
+.sh__line {
+  display: block;
+}
+
 .markdown-body table {
   width: 100%;
   border-collapse: collapse;
@@ -1305,10 +1353,133 @@
   border-top: 1px solid var(--hairline);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
   color: var(--mute);
+}
+
+.editor-footer-categories {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editor-footer-label {
+  font-size: 12px;
+  color: var(--mute);
+  font-weight: 500;
+}
+
+.editor-footer-none {
+  font-size: 12px;
+  color: var(--mute-2);
+}
+
+/* Move Dialog */
+.move-dialog-card {
+  width: min(460px, 92vw);
+}
+
+.move-dialog-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--canvas-soft-2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.move-dialog-item-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.move-dialog-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mute);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.move-dialog-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.move-dialog-folder-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink);
+  transition: background 0.12s ease;
+  user-select: none;
+}
+
+.move-dialog-folder-item:hover:not(.disabled) {
+  background: var(--canvas-soft);
+}
+
+.move-dialog-folder-item.selected {
+  background: var(--canvas-soft-2);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.move-dialog-folder-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.move-dialog-folder-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.move-dialog-current-badge {
+  font-size: 11px;
+  color: var(--mute);
+  font-weight: normal;
+  margin-left: auto;
+}
+
+/* Selected and Cut Drive items */
+.note-card.selected,
+.drive-folder-card.selected {
+  border-color: var(--link) !important;
+  box-shadow: 0 0 0 1.5px var(--link) !important;
+  background: var(--link-bg-soft) !important;
+}
+
+.drive-table-row.selected td {
+  background: var(--link-bg-soft) !important;
+}
+
+.note-card.cut,
+.drive-folder-card.cut {
+  opacity: 0.45 !important;
+  border-style: dashed !important;
+}
+
+.drive-table-row.cut td {
+  opacity: 0.45 !important;
 }
 
 /* Vercel Modal Primitives */

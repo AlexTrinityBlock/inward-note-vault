@@ -34,7 +34,7 @@ class NoteCreate(BaseModel):
     """Payload for creating a note."""
 
     notebook: Notebook = NOTEBOOK_PLAIN
-    title: str | None = Field(default=None, max_length=200)
+    title: str | None = Field(default=None, max_length=2000)
     body: str | None = None
 
     # Encrypted notes only: base64 AES-GCM payload and nonce from the browser.
@@ -48,7 +48,7 @@ class NoteCreate(BaseModel):
 class NoteUpdate(BaseModel):
     """Partial note update. `move` applies `folder_id`, including `null`."""
 
-    title: str | None = Field(default=None, max_length=200)
+    title: str | None = Field(default=None, max_length=2000)
     body: str | None = None
     ciphertext: str | None = None
     iv: str | None = None
@@ -168,9 +168,18 @@ def _apply_categories(session: SessionDep, note: Note, names: list[str]) -> Note
         ) from error
 
 
-def _require_folder(session: SessionDep, folder_id: int | None) -> None:
-    if folder_id is not None and crud.get_folder(session, folder_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+def _require_folder(
+    session: SessionDep, folder_id: int | None, notebook: str | None = None
+) -> None:
+    if folder_id is not None:
+        folder = crud.get_folder(session, folder_id)
+        if folder is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+        if notebook is not None and folder.notebook != notebook:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Cannot place a {notebook} note in a {folder.notebook} folder",
+            )
 
 
 @router.get("", operation_id="listNotes")
@@ -210,7 +219,7 @@ def create_note(payload: NoteCreate, session: SessionDep, _user: CurrentUser) ->
         ciphertext=payload.ciphertext,
         iv=payload.iv,
     )
-    _require_folder(session, payload.folder_id)
+    _require_folder(session, payload.folder_id, notebook=payload.notebook)
 
     note = crud.create_note(
         session,
@@ -262,7 +271,7 @@ def update_note(
     if payload.iv is not None:
         fields["iv"] = payload.iv
     if payload.move:
-        _require_folder(session, payload.folder_id)
+        _require_folder(session, payload.folder_id, notebook=note.notebook)
         fields["folder_id"] = payload.folder_id
 
     if fields:
@@ -317,9 +326,10 @@ async def classify(
         title = note.title
         content = payload.content if payload.content is not None else (note.body or "")
 
-    paths = crud.folder_paths(session)
+    paths = crud.folder_paths(session, notebook=note.notebook)
     folders = [
-        FolderOption(id=folder.id, path=paths[folder.id]) for folder in crud.list_folders(session)
+        FolderOption(id=folder.id, path=paths.get(folder.id, folder.name or ""))
+        for folder in crud.list_folders(session, notebook=note.notebook)
     ]
 
     # Candidates are the user's own categories. Jev selects from what exists; it

@@ -16,6 +16,7 @@ globals.window = dom;
 globals.document = dom.document;
 globals.navigator = dom.navigator;
 globals.localStorage = dom.localStorage;
+globals.sessionStorage = dom.sessionStorage;
 globals.HTMLElement = dom.HTMLElement;
 globals.Element = dom.Element;
 globals.Node = dom.Node;

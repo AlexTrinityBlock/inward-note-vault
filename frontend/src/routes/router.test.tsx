@@ -88,6 +88,7 @@ async function renderAt(path: string): Promise<{ errors: string[]; html: string 
               element: createElement(DriveLayout, { notebook: "plain" }),
               children: [
                 { index: true, element: createElement(DriveRoute) },
+                { path: "folders/:folderId", element: createElement(DriveRoute) },
                 { path: "categories", element: createElement(CategoryRoute) },
                 { path: "notes/:noteId", element: createElement(NoteRoute) },
               ],
@@ -146,6 +147,7 @@ async function renderAt(path: string): Promise<{ errors: string[]; html: string 
 const ROUTES = [
   "/",
   "/n/plain",
+  "/n/plain/folders/1",
   "/n/plain/categories",
   "/n/plain/notes/1",
   "/n/encrypted",

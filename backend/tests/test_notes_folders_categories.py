@@ -118,3 +118,67 @@ def test_encrypted_notes_cannot_be_updated_with_plaintext(account: TestClient) -
     response = account.patch(f"/api/notes/{note['id']}", json={"title": "Leak"})
 
     assert response.status_code == 422
+
+
+def test_folders_separated_by_notebook(account: TestClient) -> None:
+    plain_folder = account.post("/api/folders", json={"name": "Work", "notebook": "plain"}).json()
+    enc_folder = account.post(
+        "/api/folders",
+        json={"notebook": "encrypted", "ciphertext": "ZW5jX25hbWU=", "iv": "aXZpdml2aXZpdg=="},
+    ).json()
+
+    plain_list = account.get("/api/folders?notebook=plain").json()
+    assert any(f["id"] == plain_folder["id"] for f in plain_list)
+    assert not any(f["id"] == enc_folder["id"] for f in plain_list)
+
+    enc_list = account.get("/api/folders?notebook=encrypted").json()
+    assert any(f["id"] == enc_folder["id"] for f in enc_list)
+    assert not any(f["id"] == plain_folder["id"] for f in enc_list)
+
+    # Placing plain note in encrypted folder must fail
+    res1 = account.post(
+        "/api/notes",
+        json={"notebook": "plain", "title": "Test", "folder_id": enc_folder["id"]},
+    )
+    assert res1.status_code == 422
+
+    # Placing encrypted note in plain folder must fail
+    res2 = account.post(
+        "/api/notes",
+        json={
+            "notebook": "encrypted",
+            "ciphertext": "ZmFrZQ==",
+            "iv": "aXZpdml2aXZpdg==",
+            "folder_id": plain_folder["id"],
+        },
+    )
+    assert res2.status_code == 422
+
+
+def test_encrypted_folders_store_only_ciphertext(account: TestClient) -> None:
+    # Encrypted folder rejects plaintext name
+    rejected = account.post(
+        "/api/folders",
+        json={"notebook": "encrypted", "name": "Secret", "ciphertext": "AAAA", "iv": "BBBB"},
+    )
+    assert rejected.status_code == 422
+
+    # Plain folder rejects ciphertext
+    rejected_plain = account.post(
+        "/api/folders",
+        json={"notebook": "plain", "name": "Plain", "ciphertext": "AAAA", "iv": "BBBB"},
+    )
+    assert rejected_plain.status_code == 422
+
+    # Cross-notebook parenting fails
+    plain = account.post("/api/folders", json={"name": "Parent", "notebook": "plain"}).json()
+    cross = account.post(
+        "/api/folders",
+        json={
+            "notebook": "encrypted",
+            "ciphertext": "ZW5j",
+            "iv": "aXZpdg==",
+            "parent_id": plain["id"],
+        },
+    )
+    assert cross.status_code == 422

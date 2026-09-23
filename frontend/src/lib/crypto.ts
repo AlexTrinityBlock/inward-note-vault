@@ -166,3 +166,19 @@ export async function openNote(
   const { title, body } = parsed as Partial<NoteSecret>;
   return { title: title ?? "", body: body ?? "" };
 }
+
+/** Encrypt a folder name. */
+export async function sealFolderName(
+  key: NotebookKey,
+  name: string,
+): Promise<EncryptedPayload> {
+  return encrypt(key, name);
+}
+
+/** Decrypt a folder name. Returns empty string on failure. */
+export async function openFolderName(
+  key: NotebookKey,
+  payload: EncryptedPayload,
+): Promise<string> {
+  return decrypt(key, payload);
+}
