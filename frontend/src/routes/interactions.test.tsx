@@ -198,6 +198,7 @@ async function mount(path: string, notes: unknown[] = [], folders: unknown[] = [
     type,
     settle,
     path: () => router.state.location.pathname,
+    search: () => router.state.location.search,
     unmount: async () => {
       await act(async () => {
         root.unmount();
@@ -905,6 +906,51 @@ test("renderMarkdown renders code blocks with sugar-high syntax highlighting and
   expect(html).toContain('sh__token--keyword');
   expect(html).toContain('greeting');
 });
+
+test("SearchBox does not trigger search while IME is composing and triggers only on compositionend", async () => {
+  const { act } = await import("react");
+  const app = await mount("/n/plain", [NOTE]);
+  try {
+    const input = app.container.querySelector(".drive-search-box input") as HTMLInputElement;
+    expect(input).not.toBeNull();
+
+    const proto = dom.window.HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+
+    // 1. Start IME composition (e.g. typing Bopomofo for "貓")
+    await act(async () => {
+      input.dispatchEvent(new dom.Event("compositionstart", { bubbles: true }) as unknown as Event);
+    });
+
+    // 2. Typing while composing: input value changes to "ㄇ", then "ㄇㄠ"
+    await act(async () => {
+      setter?.call(input, "ㄇ");
+      input.dispatchEvent(new dom.Event("input", { bubbles: true }) as unknown as Event);
+    });
+    await act(async () => {
+      setter?.call(input, "ㄇㄠ");
+      input.dispatchEvent(new dom.Event("input", { bubbles: true }) as unknown as Event);
+    });
+    await app.settle(2);
+
+    // During composition, URL search params should NOT have updated with phonetic symbols
+    expect(app.search()).not.toContain("q=");
+
+    // 3. User commits candidate "貓" -> compositionend fires followed by input
+    await act(async () => {
+      setter?.call(input, "貓");
+      input.dispatchEvent(new dom.Event("compositionend", { bubbles: true }) as unknown as Event);
+      input.dispatchEvent(new dom.Event("input", { bubbles: true }) as unknown as Event);
+    });
+    await app.settle(4);
+
+    // Now the committed character is passed and search URL is updated
+    expect(decodeURIComponent(app.search())).toContain("q=貓");
+  } finally {
+    await app.unmount();
+  }
+});
+
 
 
 
