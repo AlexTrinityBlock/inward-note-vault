@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="icon-title">
+  <title id="icon-title">Inward Note Vault</title>
+  <desc>A fountain pen and a half-closed eye, the app icon, on a rounded dark tile.</desc>
+
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2b2b" />
+      <stop offset="1" stop-color="#171717" />
+    </linearGradient>
+
+    <!-- Clipping mask for the half-closed right eye. -->
+    <clipPath id="clip-half-eye">
+      <path d="M 11 13.5 C 13.8 12.2, 19.5 12.2, 22.5 13.5 C 19.5 17.5, 13.8 17.5, 11 13.5 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- The rounded plate is the app's own #171717 primary so the white line art
+       stays legible on the light theme and on the dark one, where the tile edge
+       is defined by the hairline border instead of by contrast with the page. -->
+  <rect width="512" height="512" rx="116" fill="url(#plate)" />
+  <rect x="1" y="1" width="510" height="510" rx="115" fill="none" stroke="#ffffff"
+        stroke-opacity="0.12" stroke-width="2" />
+
+  <!-- The glyph from image/icon.svg, scaled so it fills ~66% of the tile and
+       centred on the tile: the source artwork spans x 3.2..22.5, y 3..21 in a
+       24-unit box, so its centre (12.85, 12) lands on (256, 256). -->
+  <g transform="translate(41.4 55.6) scale(16.7)" fill="none" stroke="#ffffff"
+     stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Left: a minimal pen pointing at the sky. -->
+    <path d="M 5 3 L 3.2 8.5 L 3.8 11.5 L 3.8 21" />
+    <path d="M 5 3 L 6.8 8.5 L 6.2 11.5 L 6.2 21" />
+    <line x1="3.8" y1="21" x2="6.2" y2="21" />
+    <line x1="5" y1="3" x2="5" y2="8" />
+    <circle cx="5" cy="8.6" r="0.6" />
+    <!-- Right: a half-closed eye. -->
+    <g clip-path="url(#clip-half-eye)">
+      <circle cx="16.8" cy="14.2" r="3.2" />
+      <circle cx="16.8" cy="14.2" r="1.3" />
+    </g>
+    <path d="M 11 13.5 C 13.8 12.2, 19.5 12.2, 22.5 13.5" />
+    <path d="M 11 13.5 C 13.8 17.5, 19.5 17.5, 22.5 13.5" />
+  </g>
+</svg>

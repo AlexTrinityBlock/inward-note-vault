@@ -1,4 +1,25 @@
-# inward-note-vault
+<div align="center">
+  <img src="image/icon-readme.svg" alt="Inward Note Vault" width="120" height="120">
+</div>
+
+<h1 align="center">inward-note-vault</h1>
+
+<p align="center">
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.3.0-171717" alt="Version 0.3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/AlexTrinityBlock/inward-note-vault?label=license&amp;color=171717" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/i18n-en%20%7C%20zh--Hant%20%7C%20zh--Hans-171717" alt="UI languages: English, Traditional Chinese, Simplified Chinese">
+  <img src="https://img.shields.io/badge/self--hosted-yes-171717" alt="Self-hosted">
+  <a href="https://github.com/AlexTrinityBlock/inward-note-vault/pulls"><img src="https://img.shields.io/badge/PRs-welcome-171717" alt="Pull requests welcome"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.14-3776AB?logo=python&amp;logoColor=white" alt="Python 3.14">
+  <img src="https://img.shields.io/badge/react-19-61DAFB?logo=react&amp;logoColor=black" alt="React 19">
+  <img src="https://img.shields.io/badge/vite-8-646CFF?logo=vite&amp;logoColor=white" alt="Vite 8">
+  <img src="https://img.shields.io/badge/bun-1.3.6-fbf0df?logo=bun&amp;logoColor=black" alt="Bun 1.3.6">
+  <img src="https://img.shields.io/badge/sqlite-3-003B57?logo=sqlite&amp;logoColor=white" alt="SQLite 3">
+  <img src="https://img.shields.io/badge/docker%20compose-2496ED?logo=docker&amp;logoColor=white" alt="Docker Compose">
+</p>
 
 A self-hosted notebook you can run with one command. Notes live in SQLite; the
 ones you mark as encrypted are sealed in your browser, so the server only ever
@@ -123,6 +144,7 @@ note; it is still memory-only, and a reload locks the notebook again.
 ├── backend/            # FastAPI + SQLAlchemy + Alembic, SQLite storage
 ├── frontend/           # React + TypeScript, Vite, Orval-generated client
 │   └── dist/           # the built client, committed so only `uv` is needed
+├── image/              # the app icon, and the tile the README header shows
 ├── .dsh/skills/        # project skills, including TypeSafe judgment guidance
 ├── start.ps1           # one-step launcher (also start.sh, start.bat)
 ├── docker-compose.yml  # single container, SQLite on a volume
