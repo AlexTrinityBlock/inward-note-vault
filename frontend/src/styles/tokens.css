@@ -1,0 +1,114 @@
+/* ==========================================================================
+   tokens.css - design tokens ported verbatim from template/frontend/styles.css
+   :root defaults plus the [data-theme="dark"] override block.
+   Import order: tokens.css -> base.css -> layout.css -> components.css
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Color System - Light (Default) */
+  --primary: #171717;
+  --on-primary: #ffffff;
+  --ink: #171717;
+  --body: #4d4d4d;
+  --mute: #888888;
+  --hairline: #ebebeb;
+  --hairline-strong: #a1a1a1;
+  --canvas: #ffffff;
+  --canvas-soft: #fafafa;
+  --canvas-soft-2: #f5f5f5;
+
+  --link: #0070f3;
+  --link-deep: #0761d1;
+  --link-bg-soft: #d3e5ff;
+  --success: #0070f3;
+  --error: #ee0000;
+  --error-soft: #f7d4d6;
+  --error-deep: #c50000;
+  --warning: #f5a623;
+  --warning-soft: #ffefcf;
+  --warning-deep: #ab570a;
+
+  --violet: #7928ca;
+  --violet-soft: #d8ccf1;
+  --cyan: #50e3c2;
+  --highlight-pink: #ff0080;
+
+  --gradient-develop-start: #007cf0;
+  --gradient-develop-end: #00dfd8;
+  --gradient-preview-start: #7928ca;
+  --gradient-preview-end: #ff0080;
+  --gradient-ship-start: #ff4d4d;
+  --gradient-ship-end: #f9cb28;
+
+  --selection-bg: #171717;
+  --selection-fg: #f2f2f2;
+  /* Not present in the template: var(--accent) was used by the mobile
+     #classify-btn rule while never being defined, so it fell back to the
+     inherited --ink colour. Aliased here to keep that exact rendering. */
+  --accent: var(--ink);
+
+  /* Typography.
+     Geist has no Han glyphs, so the CJK faces stay in the chain ahead of the
+     generic families: without them a reader on a machine with no system CJK
+     default gets tofu for the Chinese dictionaries. Geist itself is loaded from
+     Google Fonts and degrades to Inter/system-ui when unavailable. */
+  --font-sans: "Geist", Inter, system-ui, -apple-system, "Noto Sans TC", "Noto Sans SC",
+    "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* Radius Tokens */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;      /* --geist-radius */
+  --radius-md: 8px;      /* --geist-marketing-radius */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill-sm: 64px;
+  --radius-pill: 100px;  /* marketing CTA pill */
+  --radius-full: 9999px;
+
+  /* Elevation (Stacked Shadows + Inset Hairline) */
+  --shadow-level-1: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --shadow-level-2: 0 0 0 1px rgba(0, 0, 0, 0.08), 0px 1px 1px rgba(0, 0, 0, 0.03), 0px 2px 2px rgba(0, 0, 0, 0.04);
+  --shadow-level-3: 0 0 0 1px rgba(0, 0, 0, 0.08), 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 8px -8px rgba(0, 0, 0, 0.04);
+  --shadow-level-4: 0 0 0 1px rgba(0, 0, 0, 0.08), 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
+  --shadow-level-5: 0 0 0 1px rgba(0, 0, 0, 0.08), 0px 1px 1px rgba(0, 0, 0, 0.03), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+
+  --header-height: 64px;
+  --sidebar-width: 250px;
+  --list-width: 330px;
+
+  --transition: all 0.15s ease;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #ffffff;
+  --on-primary: #000000;
+  --ink: #ffffff;
+  --body: #a1a1a1;
+  --mute: #666666;
+  --hairline: #222222;
+  --hairline-strong: #444444;
+  --canvas: #0a0a0a;
+  --canvas-soft: #000000;
+  --canvas-soft-2: #141414;
+
+  --link: #0070f3;
+  --link-deep: #3291ff;
+  --link-bg-soft: rgba(0, 112, 243, 0.15);
+
+  --error-soft: rgba(238, 0, 0, 0.15);
+  --warning-soft: rgba(245, 166, 35, 0.15);
+
+  --selection-bg: #ffffff;
+  --selection-fg: #000000;
+
+  --shadow-level-1: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --shadow-level-2: 0 0 0 1px rgba(255, 255, 255, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-level-3: 0 0 0 1px rgba(255, 255, 255, 0.12), 0px 4px 12px rgba(0, 0, 0, 0.7);
+  --shadow-level-4: 0 0 0 1px rgba(255, 255, 255, 0.12), 0px 8px 24px rgba(0, 0, 0, 0.8);
+  --shadow-level-5: 0 0 0 1px rgba(255, 255, 255, 0.14), 0px 16px 40px rgba(0, 0, 0, 0.9);
+}

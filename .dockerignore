@@ -1,0 +1,24 @@
+.git
+.gitignore
+.dsh
+.env
+.env.*
+private-docs
+
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/*.tsbuildinfo
+
+frontend/dist is intentionally NOT excluded: the built client is committed so the
+image needs no Node toolchain at all. If you change the frontend, run
+`cd frontend && bun run build` and commit `frontend/dist` before building the image.
+backend/data
+*.db
+*.sqlite3
+
+.vscode
+.idea
+.DS_Store

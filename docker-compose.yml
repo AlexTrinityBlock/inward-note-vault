@@ -1,0 +1,36 @@
+# One container, one SQLite file on a named volume.
+#
+#   docker compose up --build      ->  http://127.0.0.1:8000
+#
+# For hot-reloading development servers instead, use docker-compose.dev.yml.
+
+name: inward-note-vault
+
+services:
+  app:
+    build:
+      context: .
+    image: inward-note-vault:local
+    ports:
+      - "8000:8000"
+    environment:
+      INWARD_DATA_DIR: /data
+      # Optional: also settable in the UI on first run, and stored in SQLite.
+      TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+    volumes:
+      - vault-data:/data
+    restart: unless-stopped
+    healthcheck:
+      # The uv image has no `python` on PATH; the project venv does.
+      test:
+        - CMD
+        - .venv/bin/python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  vault-data:

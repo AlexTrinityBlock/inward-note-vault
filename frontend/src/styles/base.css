@@ -1,0 +1,175 @@
+/* ==========================================================================
+   base.css - reset, element defaults, scrollbar, form primitives and the
+   button.primary / button.ghost / button.danger / button.icon-btn modifiers.
+   Ported from template/frontend/styles.css, which defines no other global
+   element rules (no h1-h6 / p / a / :focus-visible defaults).
+   ========================================================================== */
+
+/* Base & Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  color: var(--ink);
+  background: var(--canvas-soft);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Minimal Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hairline-strong);
+}
+
+/* Vercel Button Primitives */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  color: var(--ink);
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: text;
+  height: 36px;
+  padding: 0 12px;
+}
+
+button:hover:not(:disabled) {
+  background: var(--canvas-soft-2);
+  border-color: var(--hairline-strong);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* button-primary: The canonical 100px pill black ink CTA */
+button.primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+  font-weight: 500;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #000000;
+  border-color: #000000;
+}
+
+[data-theme="dark"] button.primary:hover:not(:disabled) {
+  background: #e5e5e5;
+  border-color: #e5e5e5;
+}
+
+button.ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--body);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--canvas-soft-2);
+  color: var(--ink);
+}
+
+button.danger {
+  color: var(--error);
+  border-color: transparent;
+  background: transparent;
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--error-soft);
+  color: var(--error-deep);
+}
+
+button.icon-btn {
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+/* Form Inputs */
+input, select, textarea {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.28px;
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  height: 40px;
+  transition: var(--transition);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+  outline: none;
+}
+
+/* Keyboard focus ring.
+   The template relies on the browser default, and the `outline: none` above
+   would remove it from form controls; without a replacement a keyboard user
+   loses the only cue telling them where they are. Scoped to `:focus-visible`
+   so a mouse click stays quiet. */
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+/* The template defines no heading or paragraph rules outside `.markdown-body`,
+   which leaves the setup, login and settings screens running together. */
+h1, h2, h3, h4 {
+  line-height: 1.25;
+}
+
+p {
+  margin-bottom: 8px;
+}
+
